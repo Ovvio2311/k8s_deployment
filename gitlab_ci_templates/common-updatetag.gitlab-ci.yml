@@ -1,0 +1,74 @@
+
+update-image-tag:
+  image: curlimages/curl
+  stage: deploy
+  needs: ["restart-argocd-deployment"]
+  tags:
+    - docker-non-concurrent-runner
+  needs:
+    - job: build-push-docker-image
+      artifacts: true
+  variables:
+    GIT_STRATEGY: none
+    GITLAB_K8S_DEPLOY_PROJECT_ID: "72"
+    GITLAB_K8S_DEPLOY_PROJECT_TOKEN: "jtReJTZahzeCZu5o3-EV"
+    GITLAB_API_URL: ${CI_SERVER_URL}/api/v4/projects/${GITLAB_K8S_DEPLOY_PROJECT_ID}/repository/commits
+    ZONE_FOLDER_NAME: ${ZONE}
+    APP_FOLDER_NAME: ${ARGOCD_PROJECT_NAME}
+    # IMAGE_TAG_XXX came from job [build-push-docker-image]
+    IMAGE_TAG_LONG: ${IMAGE_TAG_LONG}
+    IMAGE_TAG_SHORT: ${IMAGE_TAG_SHORT}
+  before_script:
+    - if [ -z "$ZONE" ]; then echo "Missing variable ZONE in gitlab-ci.yml"; exit 1; fi
+    - GITLAB_API_URL="${CI_SERVER_URL}/api/v4/projects/${GITLAB_K8S_DEPLOY_PROJECT_ID}/repository/commits"
+    - APP_FOLDER_NAME=`echo $APP_FOLDER_NAME | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - echo "CI_SERVER_URL=$CI_SERVER_URL"
+    - echo "GITLAB_API_URL=$GITLAB_API_URL"
+    - echo "ZONE_FOLDER_NAME=$ZONE_FOLDER_NAME"
+    - echo "APP_FOLDER_NAME=$APP_FOLDER_NAME"
+    - echo "IMAGE_TAG_LONG:$IMAGE_TAG_LONG"
+    - echo "IMAGE_TAG_SHORT:$IMAGE_TAG_SHORT"
+  script:
+    - FILE_PATH="k8s_yaml/${ZONE_FOLDER_NAME}/${APP_FOLDER_NAME}/values-${CI_COMMIT_REF_SLUG}-image-tag.yaml"
+    - echo "FILE_PATH=$FILE_PATH"
+    - |
+      cat <<EOF > FILE_CONTENT.txt
+      image:
+        tag: "${IMAGE_TAG_SHORT}"
+      EOF
+    - ESCAPED_FILE_CONTENT=$(sed ':a;N;$!ba;s/\n/\\n/g;s/"/\\"/g' FILE_CONTENT.txt)
+    - |
+      cat <<EOF > POST_CONTENT.txt
+      {
+        "branch":"master",
+        "commit_message":"update image tag ${IMAGE_TAG_SHORT}",
+        "actions":[
+          {
+            "action":"update",
+            "file_path":"${FILE_PATH}",
+            "content":"${ESCAPED_FILE_CONTENT}"
+          }
+        ]
+      }
+      EOF
+    - |
+      cat <<EOF > HTTP_HEADER.txt
+      Authorization: Bearer ${GITLAB_K8S_DEPLOY_PROJECT_TOKEN}
+      Content-Type: application/json
+      EOF
+    - cat HTTP_HEADER.txt
+    - cat POST_CONTENT.txt
+    - curl "${GITLAB_API_URL}" --insecure
+      -i --output response.txt
+      --header @HTTP_HEADER.txt
+      --data @POST_CONTENT.txt
+      --silent --write-out "%{response_code}" > response_code.txt
+    - cat response.txt
+    # exit if response code if not 200
+    - if [ "$(cat response_code.txt)" != "201" ]; then exit 1; fi
+  only:
+    - dev
+    - master
+#     # - nonprod
+#     # - p1
+    # - p2

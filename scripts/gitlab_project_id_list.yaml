@@ -1,0 +1,95 @@
+---
+# ---------- bes --------------------------------------------------
+- bes/bes_core/ACCMGT_API
+- bes/AuthAPI
+- bes/bes_acc_im001_fft_account_registration
+- bes/bes_acc_im002_fft_vehicle_management
+- bes/bes_acc_im003_fft_vehicle_group_management
+- bes/bes_acc_im004_fft_account_search
+- bes/bes_acc_im005_fft_driver_approval
+- bes/bes_acc_im006_fft_account_management
+- bes/bes_acc_im007_fft_vehicle_pairing
+- bes/bes_acc_im008_fft_tag_management
+- bes/bes_acc_im009_fft_payment_and_billing
+- bes/bes_acc_im010_fft_transaction
+- bes/bes_acc_im011_ffts_toll_and_surcharge
+- bes/bes_acc_im012_ffts_account_history
+- bes/bes_acc_im013_ffts_performance_monitoring
+- bes/bes_cre_im001_tokenization
+- bes/bes_cre_im002_otp
+- bes/notification/bes_cre_im007_notification_template_management
+- bes/notification/bes_cre_im008_notification_message_management
+- bes/notification/bes_cre_im009_notification_processor
+- bes/bes_cre_im010_shortlink
+- bes/notification/bes_notification_pulsar_consumer_services
+- bes/notification/bes_notification_push_app_services
+- bes/notification/bes_notification_push_email_services
+- bes/notification/bes_notification_push_sms_services
+
+- bes/bes-notification-push-app-services-low
+- bes/bes-notification-push-app-services-medium
+- bes/bes-notification-push-app-services-high
+- bes/bes-notification-push-sms-services-low
+- bes/bes-notification-push-sms-services-medium
+- bes/bes-notification-push-sms-services-high
+- bes/bes-notification-push-email-services-low
+- bes/bes-notification-push-email-services-medium
+- bes/bes-notification-push-email-services-high
+- bes/bes-notification-consumer-status-update
+- bes/bes-notification-consumer-low
+- bes/bes-notification-consumer-high
+- bes/bes-notification-consumer-medium
+
+- bes/notification/bes_send_schedule_notification_services
+- bes/ccms/CCMS_API
+- bes/db_service_web_api/centraldbservices_accmgt
+- bes/db_service_web_api/centraldbservices_ccms
+- bes/db_service_web_api/centraldbservices_core
+- bes/db_service_web_api/centraldbservices_ecms
+- bes/db_service_web_api/centraldbservices_das
+- bes/das_dataconsumer
+- bes/DAS_EVID_API
+- bes/das_evidence_record_consumer
+- bes/DAS_ImageObj_Consumer
+- bes/das_transaction_record_consumer
+- bes/ecms/ecms_api
+- bes/notification_api
+- bes/S3_API
+- bes/bes-2nd-ocr/secondocr_webapi
+- bes/txvalidation/tx_validation
+- bes/TxvProcessConsumer
+- bes/validv_api
+# ---------- bes-job --------------------------------------------------
+- bes/ecms/auto_issue_suspend_fsn
+- bes/auto_payment_scheduler
+- bes/ecms/BES_S3ObjectStorage_Archive_Bucket
+- bes/bes_core/bes_schedule_account_idle
+- bes/bes_core/bes_schedule_account_idle_reminder
+- bes/bes_core/bes_schedule_driver_approval_pairing_expiry
+- bes/bes_core/bes_schedule_monthly_statement_notice
+- bes/bes_core/bes_schedule_payment_reminder
+- bes/bes_core/bes_schedule_remove_vehicle_data_for_tt_trxn
+- bes/ecms/ecms_surcharge_notice_generation
+- bes/ecms/GenerateIssuedSurcharge
+# ---------- dmz-bes --------------------------------------------------
+- bes/bes_ccs
+- bes/external_api_middleware/BES_PSP
+- bes/BES_SignalRServer
+- bes/external_api_middleware/BES_TSP
+- bes/external_api_middleware/BES_TTIS
+- bes/BES_WMM
+- bes/BES_WMM2
+- bes/bes_core/BESCORE_PORTAL
+- bes/ccms/CCMS_PORTAL
+- bes/ccs_middleware
+- bes/das_middleware
+- bes/ecms/ECMS_PORTAL
+- bes/FFTS_WEB
+- bes/notification/bes_cre_im011_notification_result
+- toms/toms_middleware
+- bes/validv_middleware
+# ---------- toms --------------------------------------------------
+# - toms/dailyrenewrsacert
+# - toms/TOMS_API
+# # toms auth api use proejct = bes/AuthAPI
+# - toms/TOMS_PORTAL

@@ -1,0 +1,25 @@
+nameOverride: tx-validation-{{toll_domain_abb}}{{name_suffix}}
+fullnameOverride: tx-validation-{{toll_domain_abb}}{{name_suffix}}
+
+https:
+  enabled: false
+
+service:
+  enabled: true
+  type: NodePort
+  httpNodePort: 3107{{toll_domain_id}}
+
+replicaCount: {{replicaCount}}
+
+config:
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__indexFormat: "tx-validation-{{toll_domain_abb}}{{name_suffix}}-elasticsearch-{0:yyyy.MM.dd}"
+
+  topic: "persistent://das/{{toll_domain_abb}}/das{{topic_backlog_suffix}}_txv_process_queue"
+  topicRawTrxn: "persistent://das/{{toll_domain_abb}}/das_raw_trxn_queue"
+  topicRawEvid: "persistent://das/{{toll_domain_abb}}/das_raw_evid_queue"
+  topicProcessStat: "persistent://das/{{toll_domain_abb}}/txv_process_stat_queue"
+
+  TollDomainID: {{toll_domain_id}}
+  EndPointID: {{toll_domain_id}}
+
+  ### do not use appsetting.json here, use env var only, online tools to help https://www.coderstool.com/flatten-json, Delimiter is (two underscore) = __

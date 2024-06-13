@@ -1,0 +1,7 @@
+image:
+  registry: "us-central1-docker.pkg.dev/direct-topic-422109/fyp-repo"
+
+config:
+  dotnetEnv: "K8S_DEV"
+  Kestrel__EndpointDefaults__ClientCertificateMode: "AllowCertificate"
+

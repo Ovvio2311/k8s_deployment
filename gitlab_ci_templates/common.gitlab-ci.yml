@@ -1,0 +1,267 @@
+variables:
+  GIT_DEPTH: 2
+  DOCKER_FILE_PATH: ./Dockerfile
+  gitlab_ip: "34.121.50.49"
+  # Artifacts_Region: "us-central1-docker.pkg.dev"
+  GCR_IMAGE: "$Artifacts_Region/direct-topic-422109/fyp-repo"
+  project_id: "direct-topic-422109"
+
+stages:
+    - build
+    - deploy    
+
+build-push-docker-image:
+  stage: build
+  tags:
+    - dind  
+  before_script:
+    # convert to lower case, convert non-alphanumeric and slash characters to hyphen
+    - HARBOR_REPOSITORIES=`echo $HARBOR_REPOSITORIES | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - NEW_IMAGE_REPO="$CI_REGISTRY/$HARBOR_REPOSITORIES"
+    - TAG_VERSION="$(date -d $(echo "$CI_COMMIT_TIMESTAMP" | cut -c1-19) -D "%Y-%m-%dT%H:%M:%S" +"v%Y.%m%d.%H%M%S").$CI_PIPELINE_IID"
+    - echo "NEW_IMAGE_REPO=$NEW_IMAGE_REPO"
+    - echo "TAG_VERSION=$TAG_VERSION"
+    - echo "CI_REGISTRY=$CI_REGISTRY"
+    - echo "CI_REGISTRY_USER=$CI_REGISTRY_USER"
+    - echo "CI_REGISTRY_PASSWORD=$CI_REGISTRY_PASSWORD"
+    - echo "CI_DEPLOY_USER=$CI_DEPLOY_USER"
+    - echo "CI_DEPLOY_PASSWORD=$CI_DEPLOY_PASSWORD"
+    - echo "gitlab_ip=$gitlab_ip"
+    - echo "CI_PROJECT_NAME=$CI_PROJECT_NAME"
+    - echo "CI_API_V4_URL=${CI_API_V4_URL}"
+    - echo "CI_COMMIT_REF_SLUG=$CI_COMMIT_REF_SLUG"
+    - echo "CI_PIPELINE_IID=$CI_PIPELINE_IID"
+    
+    # - echo "gcp_registry_key=$gcp_registry_key"  
+    - cp /etc/docker/certs.d/$gitlab_ip.crt /etc/docker/certs.d/ca.crt -v    
+    - mkdir -p /etc/docker/certs.d/$CI_REGISTRY -v
+    - cp /etc/docker/certs.d/ca.crt /etc/docker/certs.d/$CI_REGISTRY/ca.crt -v
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - time docker build . -f $DOCKER_FILE_PATH
+      --target build
+      --cache-from $NEW_IMAGE_REPO:latest-build-cache
+      --tag        $NEW_IMAGE_REPO:latest-build-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+
+    - time docker build . -f $DOCKER_FILE_PATH
+      --target publish
+      --cache-from $NEW_IMAGE_REPO:latest-publish-cache
+      --tag        $NEW_IMAGE_REPO:latest-publish-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+
+    - time docker build . -f $DOCKER_FILE_PATH
+      --cache-from $NEW_IMAGE_REPO:latest
+      --cache-from $NEW_IMAGE_REPO:latest-build-cache
+      --cache-from $NEW_IMAGE_REPO:latest-publish-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --tag        $NEW_IMAGE_REPO:latest
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-latest
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-$TAG_VERSION
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID
+
+    # time docker push "$NEW_IMAGE_REPO" --all-tags
+    # - echo "Compile complete."
+    # remove images from gitlab-runner but keep cache and latest images
+    - IMAGES_TO_REMOVE=$(docker images --filter "dangling=false" --filter "reference=$NEW_IMAGE_REPO:*" | awk -v "ref=$CI_COMMIT_REF_SLUG" 'NR>1 && $2 != ref && $2 !~ /cache|latest/ {print $1":"$2}')
+    - echo $IMAGES_TO_REMOVE
+    - if [ -n "$IMAGES_TO_REMOVE" ]; then time docker image rm $IMAGES_TO_REMOVE; fi
+    - echo IMAGE_TAG_LONG=$CI_COMMIT_REF_SLUG-$TAG_VERSION >> IMAGE_TAGS.env
+    - echo IMAGE_TAG_SHORT=$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID >> IMAGE_TAGS.env
+    - cat IMAGE_TAGS.env
+    - echo "Push Image to GCP"
+    # push docker image to gcp cloud
+    - apk add curl
+    - apk add sudo
+    - VERSION=2.1.22
+    - OS=linux  # or "darwin" for OSX, "windows" for Windows.
+    - ARCH=amd64  # or "386" for 32-bit OSs
+    - curl -fsSL "https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v${VERSION}/docker-credential-gcr_${OS}_${ARCH}-${VERSION}.tar.gz" | tar xz docker-credential-gcr && chmod +x docker-credential-gcr && sudo mv docker-credential-gcr /usr/bin/
+    - docker-credential-gcr configure-docker $Artifacts_Region
+    - cat /root/.docker/config.json
+    - echo $gcp_registry_key > ${HOME}/gcloud-service-key.json
+    - docker login -u _json_key --password-stdin https://$Artifacts_Region < ${HOME}/gcloud-service-key.json
+    # - cat $gcp_access_key | docker login -u _json_key --password-stdin https://us-docker.pkg.dev
+    - time docker tag $NEW_IMAGE_REPO:latest $GCR_IMAGE/$ARGOCD_PROJECT_NAME:master    
+    - time docker push $GCR_IMAGE/$ARGOCD_PROJECT_NAME:master
+  artifacts:
+    reports:
+      # this will inject env var into other jobs
+      dotenv: IMAGE_TAGS.env
+    expire_in: "604800" # seconds, 604800s = 7 days
+  only:
+    - /^master.*$/
+    - /^dev.*$/
+    - /^temp.*$/
+    - master
+    - dev   
+    
+  
+argocd-deployment:
+  # image: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+  image: google/cloud-sdk:473.0.0
+  stage: deploy
+  tags:
+    - dind
+  # needs:
+  #   - job: build-push-docker-image
+  variables:
+    GIT_STRATEGY: none
+    # ARGOCD_SERVER: "192.168.64.170:31005"    
+    # below variable come from gitlab global variable, ask gitlab admin
+    # ARGOCD_USERNAME: "admin"
+    # ARGOCD_PASSWORD: "XXXXXX"
+  before_script:
+    - ARGOCD_PROJECT_NAME=`echo $ARGOCD_PROJECT_NAME | tr '[:upper:]' '[:lower:]' | sed -e 's/[_]/-/g'`    
+    - apt-get install jq -y
+    # - curl -L -o /usr/bin/jq.exe https://github.com/stedolan/jq/releases/latest/download/jq-win64.exe        
+    # - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    # - sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    # - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apk add --update openssh )'
+    # - mkdir -p /root/.ssh
+    # - touch /root/.ssh/id_rsa /root/.ssh/config /root/.ssh/known_hosts
+    # - chmod 600 /root/.ssh/id_rsa    
+    # - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > /root/.ssh/id_rsa
+    # - eval $(ssh-agent -s)
+    # - ssh-add /root/.ssh/id_rsa                     
+    # - chmod 600 /root/.ssh/known_hosts
+    # - ssh-keyscan -H $VM_IPADDRESS>> /root/.ssh/known_hosts
+  after_script:    
+    - rm ${HOME}/gcloud-service-key.json
+    - rm ${HOME}/k8s_deployment -r
+    - ls ${HOME}/
+    - ls -la /builds/0/FYP_PORTAL
+  script:  
+    # install gke auth to kubectl
+    # - curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-466.0.0-linux-x86_64.tar.gz
+    # - tar -xf google-cloud-cli-466.0.0-linux-x86_64.tar.gz
+    # - ./google-cloud-sdk/install.sh
+    # - gcloud components install gke-gcloud-auth-plugin -y 
+    - test_yaml=$(curl --insecure -H "PRIVATE-TOKEN:${cicd_api_token}" "${CI_API_V4_URL}/projects/3/repository/files/k8s_argocd_yaml%2Fdev%2Ffyp%2Fargo-$ARGOCD_PROJECT_NAME.yaml?ref=master")    
+    - content=$(echo $test_yaml | jq .content | base64 -d --ignore-garbage)
+    - echo "$content" >> argo-$ARGOCD_PROJECT_NAME.yaml
+    - echo $content
+    # - git -c http.sslVerify=false clone https://$clone_k8s_deploy_user:$clone_k8s_deploy_pw@$gitlab_ip:30443/root/k8s_deployment.git
+    # - ls
+    # - mkdir ${HOME}/k8s_deployment/
+    # - mv k8s_deployment/* ${HOME}/k8s_deployment/
+    # - ls ${HOME}/
+    - echo $gcp_registry_key > ${HOME}/gcloud-service-key.json
+    - gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+    - gcloud config list
+    - gcloud container clusters get-credentials fyp-vpc-cluster --zone us-central1-c --project $project_id
+    # - cat ${HOME}/k8s_deployment/k8s_argocd_yaml/dev/fyp/argo-$ARGOCD_PROJECT_NAME.yaml   
+    - pwd
+    - kubectl apply -f argo-$ARGOCD_PROJECT_NAME.yaml    
+  only:
+    - master
+    - dev
+
+
+restart-argocd-deployment:
+  image: argoproj/argocd:v2.6.15
+  stage: deploy
+  tags:
+    - dind
+  # needs:
+  #   - job: argocd-deployment
+  variables:
+    GIT_STRATEGY: none
+    ARGOCD_SERVER: "10.0.0.11:31080"
+    # below variable come from gitlab global variable, ask gitlab admin
+    # ARGOCD_USERNAME: "admin"
+    # ARGOCD_PASSWORD: "XXXXXX"
+  before_script:
+    - ARGOCD_PROJECT_NAME=`echo $ARGOCD_PROJECT_NAME | tr '[:upper:]' '[:lower:]' | sed -e 's/[_]/-/g'`
+    - echo "ARGOCD_SERVER:$ARGOCD_SERVER"
+    - echo "ARGOCD_PROJECT_NAME:$ARGOCD_PROJECT_NAME"
+    - echo "ARGOCD_USERNAME:$ARGOCD_USERNAME"
+    
+  script:
+    - argocd login "${ARGOCD_SERVER}" --insecure --username "${ARGOCD_USERNAME}" --password "${ARGOCD_PASSWORD}" --plaintext
+    - argocd app actions run "$ARGOCD_PROJECT_NAME" restart --kind Deployment |& tee res.txt
+    # if res.txt exists and has a size greater than zero, exit with error
+    - cat res.txt
+    - ls -la
+    - if [ -s res.txt ]; then exit 1; fi
+  only:
+    - master
+    - dev
+
+update-image-tag:
+  image: curlimages/curl
+  stage: deploy
+  tags:
+    - non-concurrent
+  needs:
+    - job: build-push-docker-image
+      artifacts: true
+  variables:
+    GIT_STRATEGY: none
+    GITLAB_K8S_DEPLOY_PROJECT_ID: "3"
+    GITLAB_K8S_DEPLOY_PROJECT_TOKEN: $cicd_api_token
+    GITLAB_API_URL: ${CI_SERVER_URL}/api/v4/projects/${GITLAB_K8S_DEPLOY_PROJECT_ID}/repository/commits
+    ZONE_FOLDER_NAME: ${ZONE}
+    APP_FOLDER_NAME: ${ARGOCD_PROJECT_NAME}
+    # IMAGE_TAG_XXX came from job [build-push-docker-image]
+    IMAGE_TAG_LONG: ${IMAGE_TAG_LONG}
+    IMAGE_TAG_SHORT: ${IMAGE_TAG_SHORT}
+  before_script:
+    - if [ -z "$ZONE" ]; then echo "Missing variable ZONE in gitlab-ci.yml"; exit 1; fi
+    - GITLAB_API_URL="${CI_SERVER_URL}/api/v4/projects/${GITLAB_K8S_DEPLOY_PROJECT_ID}/repository/commits"
+    - APP_FOLDER_NAME=`echo $APP_FOLDER_NAME | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - echo "CI_SERVER_URL=$CI_SERVER_URL"
+    - echo "GITLAB_API_URL=$GITLAB_API_URL"
+    - echo "ZONE_FOLDER_NAME=$ZONE_FOLDER_NAME"
+    - echo "APP_FOLDER_NAME=$APP_FOLDER_NAME"
+    - echo "IMAGE_TAG_LONG:$IMAGE_TAG_LONG"
+    - echo "IMAGE_TAG_SHORT:$IMAGE_TAG_SHORT"
+  script:
+    - FILE_PATH="k8s_yaml/${ZONE_FOLDER_NAME}/${APP_FOLDER_NAME}/values-${CI_COMMIT_REF_SLUG}-image-tag.yaml"
+    - echo "FILE_PATH=$FILE_PATH"
+    - |
+      cat <<EOF > FILE_CONTENT.txt
+      image:
+        tag: "${IMAGE_TAG_SHORT}"
+      EOF
+    - ESCAPED_FILE_CONTENT=$(sed ':a;N;$!ba;s/\n/\\n/g;s/"/\\"/g' FILE_CONTENT.txt)
+    - |
+      cat <<EOF > POST_CONTENT.txt
+      {
+        "branch":"master",
+        "commit_message":"update image tag ${IMAGE_TAG_SHORT}",
+        "actions":[
+          {
+            "action":"update",
+            "file_path":"${FILE_PATH}",
+            "content":"${ESCAPED_FILE_CONTENT}"
+          }
+        ]
+      }
+      EOF
+    - |
+      cat <<EOF > HTTP_HEADER.txt
+      Authorization: Bearer ${GITLAB_K8S_DEPLOY_PROJECT_TOKEN}
+      Content-Type: application/json
+      EOF
+    - cat HTTP_HEADER.txt
+    - cat POST_CONTENT.txt
+    - curl "${GITLAB_API_URL}" --insecure
+      -i --output response.txt
+      --header @HTTP_HEADER.txt
+      --data @POST_CONTENT.txt
+      --silent --write-out "%{response_code}" > response_code.txt
+    - cat response.txt
+    # exit if response code if not 200
+    - if [ "$(cat response_code.txt)" != "201" ]; then exit 1; fi
+  only:
+    - master
+    
+#     # - nonprod
+#     # - p1
+    # - p2

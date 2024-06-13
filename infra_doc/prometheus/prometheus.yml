@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: "kubernetes-apiservers"
+    kubernetes_sd_configs:
+      - role: node
+        kubeconfig_file: prometheus.kubeconfig
+      # - role: service
+      #   kubeconfig_file: prometheus.kubeconfig
+      # - role: pod
+      # kubeconfig_file: prometheus.kubeconfig
+      # - role: endpoints
+      #   kubeconfig_file: prometheus.kubeconfig
+      # - role: ingress
+      #   kubeconfig_file: prometheus.kubeconfig
+  - job_name: k8s-bes-dev
+    honor_timestamps: true
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ["192.168.64.170:6443"]
+    tls_config:
+      insecure_skip_verify: true
+    metric_relabel_configs:
+      - target_label: cluster
+        replacement: k8s-bes-dev

@@ -1,0 +1,128 @@
+deployment:
+  test:
+    enabled: false
+
+image:
+  repository: kong/kong-gateway
+  tag: "2.6.0.0-alpine"
+
+# Kong pod count.
+# It has no effect when autoscaling.enabled is set to true
+replicaCount: 2
+
+enterprise:
+  enabled: true
+  vitals:
+    enabled: false
+  portal:
+    enabled: false
+  rbac:
+    enabled: false
+
+portal:
+  enabled: false
+
+portalapi:
+  enabled: false
+
+env:
+  database: "off"
+  admin_gui_url: http://192.168.64.170:31008
+  admin_api_uri: http://192.168.64.170:31007
+  nginx_proxy_proxy_buffer_size: 128k
+  nginx_proxy_proxy_buffers: 64 256k
+  nginx_proxy_proxy_busy_buffers_size: 256k
+  nginx_proxy_large_client_header_buffers: 8 24k
+  nginx_proxy_proxy_ssl_verify: "on"
+  nginx_proxy_proxy_ssl_verify_depth: 1
+  nginx_proxy_proxy_ssl_trusted_certificate: /etc/secrets/ca-chain-secret/ca.crt
+  # proxy_url:
+  password:
+    valueFrom:
+      secretKeyRef:
+        name: kong-enterprise-superuser-password
+        key: password
+
+ingressController:
+  enabled: true
+  installCRDs: false
+  ingressClassAnnotations:
+    ingressclass.kubernetes.io/is-default-class: true
+  env:
+    kong_admin_token:
+      valueFrom:
+        secretKeyRef:
+          name: kong-enterprise-superuser-password #CHANGEME
+          key: password #CHANGEME
+
+# postgresql:
+#   enabled: true
+#   postgresqlUsername: kong
+#   postgresqlPassword: kong
+#   postgresqlDatabase: kong
+# service:
+#   port: 5432
+
+proxy:
+  enabled: true
+  type: ClusterIP
+  externalIPs:
+    - 192.168.64.191
+    - 192.168.64.200
+  http:
+    enabled: true
+    servicePort: 80
+    containerPort: 8000
+    parameters: []
+
+  tls:
+    enabled: true
+    servicePort: 443
+    containerPort: 8443
+    parameters:
+      - http2
+
+# Specify Kong admin API service and listener configuration
+admin:
+  enabled: true
+  annotations:
+    konghq.com/protocol: "https"
+
+  http:
+    enabled: true
+    servicePort: 8001
+    containerPort: 8001
+    nodePort: 31007
+
+  tls:
+    enabled: true
+    servicePort: 8444
+    containerPort: 8444
+    parameters:
+      - http2
+  ingress:
+    enabled: false
+
+manager:
+  enabled: true
+  type: NodePort
+  annotations:
+    konghq.com/protocol: "https"
+
+  http:
+    enabled: true
+    servicePort: 8002
+    nodePort: 31008
+
+  tls:
+    enabled: true
+    servicePort: 8445
+    containerPort: 8445
+    parameters:
+      - http2
+
+  ingress:
+    enabled: false
+
+secretVolumes:
+  - ca-chain-secret

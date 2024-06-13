@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: fyp-access-gcp-role@direct-topic-422109.iam.gserviceaccount.com
+  labels:
+    argocd.argoproj.io/instance: fyp-portal
+  name: fyp-portal
+  namespace: fyp
+  
+  

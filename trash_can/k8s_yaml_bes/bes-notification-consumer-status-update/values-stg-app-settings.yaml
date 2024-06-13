@@ -1,0 +1,16 @@
+config:
+  dotnetEnv: "K8S_STG"
+  appsettings: |
+    {
+      "redis": {
+        "connectionString": "redis-api-cache-node-0.redis-api-cache-headless.redis-api-cache.svc.cluster.local:6379,redis-api-cache-node-1.redis-api-cache-headless.redis-api-cache.svc.cluster.local:6379,redis-api-cache-node-2.redis-api-cache-headless.redis-api-cache.svc.cluster.local:6379,password=24R?DAGW"
+      },
+      "Pulsar": {
+        "Consumer": {
+          "pulsarUri": "pulsar://10.14.0.50:30222"
+        }
+      },
+      "AppAPIHost": "http://bes-cre-im008-notification-message-management.bes.svc/",
+      "NotificationResultAPIHost": "https://10.14.0.99:32400/",
+    }
+    

@@ -1,0 +1,98 @@
+variables:
+  GIT_DEPTH: 2
+  DOCKER_FILE_PATH: ./Dockerfile
+  gitlab_ip: "34.67.162.17"
+  # Artifacts_Region: "us-central1-docker.pkg.dev"
+  GCR_IMAGE: "$Artifacts_Region/my-project-4108m/fyp-container-registry"
+
+stages:
+    - build
+    - deploy    
+
+build-push-docker-image:
+  stage: build
+  tags:
+    - dind  
+  before_script:
+    # convert to lower case, convert non-alphanumeric and slash characters to hyphen
+    - HARBOR_REPOSITORIES=`echo $HARBOR_REPOSITORIES | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - NEW_IMAGE_REPO="$CI_REGISTRY/$HARBOR_REPOSITORIES"
+    - TAG_VERSION="$(date -d $(echo "$CI_COMMIT_TIMESTAMP" | cut -c1-19) -D "%Y-%m-%dT%H:%M:%S" +"v%Y.%m%d.%H%M%S").$CI_PIPELINE_IID"
+    - echo "NEW_IMAGE_REPO=$NEW_IMAGE_REPO"
+    - echo "TAG_VERSION=$TAG_VERSION"
+    - echo "CI_REGISTRY=$CI_REGISTRY"
+    - echo "CI_REGISTRY_USER=$CI_REGISTRY_USER"
+    - echo "CI_REGISTRY_PASSWORD=$CI_REGISTRY_PASSWORD"
+    - echo "CI_DEPLOY_USER=$CI_DEPLOY_USER"
+    - echo "CI_DEPLOY_PASSWORD=$CI_DEPLOY_PASSWORD"
+    - echo "gitlab_ip=$gitlab_ip"
+    - echo "CI_PROJECT_NAME=$CI_PROJECT_NAME"
+    - echo "CI_API_V4_URL=${CI_API_V4_URL}" 
+    # - echo "gcp_registry_key=$gcp_registry_key"  
+    - cp /etc/docker/certs.d/$gitlab_ip.crt /etc/docker/certs.d/ca.crt -v    
+    - mkdir -p /etc/docker/certs.d/$CI_REGISTRY -v
+    - cp /etc/docker/certs.d/ca.crt /etc/docker/certs.d/$CI_REGISTRY/ca.crt -v
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - time docker build . -f $DOCKER_FILE_PATH
+      --target build
+      --cache-from $NEW_IMAGE_REPO:latest-build-cache
+      --tag        $NEW_IMAGE_REPO:latest-build-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+
+    - time docker build . -f $DOCKER_FILE_PATH
+      --target publish
+      --cache-from $NEW_IMAGE_REPO:latest-publish-cache
+      --tag        $NEW_IMAGE_REPO:latest-publish-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+
+    - time docker build . -f $DOCKER_FILE_PATH
+      --cache-from $NEW_IMAGE_REPO:latest
+      --cache-from $NEW_IMAGE_REPO:latest-build-cache
+      --cache-from $NEW_IMAGE_REPO:latest-publish-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --cache-from $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --tag        $NEW_IMAGE_REPO:latest
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-latest
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-$TAG_VERSION
+      --tag        $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID
+
+    # time docker push "$NEW_IMAGE_REPO" --all-tags
+    # - echo "Compile complete."
+    # remove images from gitlab-runner but keep cache and latest images
+    - IMAGES_TO_REMOVE=$(docker images --filter "dangling=false" --filter "reference=$NEW_IMAGE_REPO:*" | awk -v "ref=$CI_COMMIT_REF_SLUG" 'NR>1 && $2 != ref && $2 !~ /cache|latest/ {print $1":"$2}')
+    - echo $IMAGES_TO_REMOVE
+    - if [ -n "$IMAGES_TO_REMOVE" ]; then time docker image rm $IMAGES_TO_REMOVE; fi
+    - echo IMAGE_TAG_LONG=$CI_COMMIT_REF_SLUG-$TAG_VERSION >> IMAGE_TAGS.env
+    - echo IMAGE_TAG_SHORT=$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID >> IMAGE_TAGS.env
+    - cat IMAGE_TAGS.env
+    - echo "Push Image to GCP"
+    # push docker image to gcp cloud
+    - apk add curl
+    - apk add sudo
+    - VERSION=2.1.22
+    - OS=linux  # or "darwin" for OSX, "windows" for Windows.
+    - ARCH=amd64  # or "386" for 32-bit OSs
+    - curl -fsSL "https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v${VERSION}/docker-credential-gcr_${OS}_${ARCH}-${VERSION}.tar.gz" | tar xz docker-credential-gcr && chmod +x docker-credential-gcr && sudo mv docker-credential-gcr /usr/bin/
+    - docker-credential-gcr configure-docker $Artifacts_Region
+    - echo $gcp_registry_key > ${HOME}/gcloud-service-key.json
+    - docker login -u _json_key --password-stdin https://$Artifacts_Region < ${HOME}/gcloud-service-key.json
+    # - cat $gcp_access_key | docker login -u _json_key --password-stdin https://us-docker.pkg.dev
+    - time docker tag $NEW_IMAGE_REPO:latest $GCR_IMAGE/$ARGOCD_PROJECT_NAME:master    
+    - time docker push $GCR_IMAGE/$ARGOCD_PROJECT_NAME:master
+  artifacts:
+    reports:
+      # this will inject env var into other jobs
+      dotenv: IMAGE_TAGS.env
+    expire_in: "604800" # seconds, 604800s = 7 days
+  only:
+    - /^master.*$/
+    - /^dev.*$/
+    - /^temp.*$/
+    - master
+    - dev   
+    

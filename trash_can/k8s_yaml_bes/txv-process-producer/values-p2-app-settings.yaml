@@ -1,0 +1,35 @@
+replicaCount: 4
+
+config:
+  dotnetEnv: "K8S_P2"
+  appsettings: |
+    {
+      "MySQL": {
+        "ConnectionString": "server=p2vdbs-tdffsbe-ptdb04-ha1.dbaas.gcis.hksarg,p2vdbs-tdffsbe-ptdb04-ha2.dbaas.gcis.hksarg;Port=19307;Database=bes_core;uid=besdb_user;pwd=Autotoll5678!;Pooling=true;MaximumPoolsize=100;CharSet=utf8;default command timeout=600;Allow User Variables=True;"
+      },
+      "Pulsar": {
+        "Producer": {
+          "EnablePulsarClientLogger": true,
+          "topicPrefix": "persistent://das/tsca/",
+          "topicBackLogPrefix": "persistent://das/tsca/",
+          "imgTopicPrefix": "persistent://das/tsca/das_middleware_imgobj",
+          "pulsarUri": "pulsar://p2vias-tdffsbe-tpuln1-01.iaas.gcis.hksarg:6650,p2vias-tdffsbe-tpuln2-01.iaas.gcis.hksarg:6650,p2vias-tdffsbe-tpuln3-01.iaas.gcis.hksarg:6650"
+        }
+      },
+      "handle_paired_up_obj_to_process_tb": {
+        "isEnable": false,
+        "unp_tb": false,
+        "raw_tb": false
+      },
+      "send_to_pulsar": {
+        "isEnable": true,
+        "paired_only": true
+      },
+      "mv_not_process": true,
+      "start_date": "",
+      "end_date": "",
+      "interval_mins": 10,
+      "EnableBatching": false,
+      "BatchingMaxMessages": 5
+    }
+

@@ -1,0 +1,71 @@
+variables:
+  GIT_DEPTH: 2
+  DOCKER_FILE_PATH: ./Dockerfile
+
+build-push-docker-image:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    # convert to lower case, convert non-alphanumeric and slash characters to hyphen
+    - HARBOR_REPOSITORIES=`echo $HARBOR_REPOSITORIES | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - NEW_IMAGE_REPO="$CI_REGISTRY/$HARBOR_REPOSITORIES"
+    - TAG_VERSION="$(date -d $(echo "$CI_COMMIT_TIMESTAMP" | cut -c1-19) -D "%Y-%m-%dT%H:%M:%S" +"v%Y.%m%d.%H%M%S").$CI_PIPELINE_IID"
+    - echo "NEW_IMAGE_REPO=$NEW_IMAGE_REPO"
+    - echo "TAG_VERSION=$TAG_VERSION"
+    - echo "CI_REGISTRY=$CI_REGISTRY"
+    - echo "CI_REGISTRY_USER=$CI_REGISTRY_USER"
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE_PATH}"
+      --skip-tls-verify-registry
+      --target build
+      --cache-repo $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --cache-repo $NEW_IMAGE_REPO:latest-build-cache
+      --destination $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --destination $NEW_IMAGE_REPO:latest-build-cache
+
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE_PATH}"
+      --skip-tls-verify-registry
+      --target publish
+      --cache-repo $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --cache-repo $NEW_IMAGE_REPO:latest-publish-cache
+      --destination $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --destination $NEW_IMAGE_REPO:latest-publish-cache
+
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE_PATH}"
+      --skip-tls-verify-registry
+      --cache-repo $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-build-cache
+      --cache-repo $NEW_IMAGE_REPO:latest-build-cache
+      --cache-repo $NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-publish-cache
+      --cache-repo $NEW_IMAGE_REPO:latest-publish-cache
+      --destination "$NEW_IMAGE_REPO:latest"
+      --destination "$NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG"
+      --destination "$NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-latest"
+      --destination "$NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-$TAG_VERSION"
+      --destination "$NEW_IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID"
+  artifacts:
+    reports:
+      # this will inject env var into other jobs
+      dotenv: TAG_VERSION.env
+    expire_in: "604800" # seconds, 604800s = 7 days
+  cache:
+    key: dotnet-restore-cache
+    paths:
+      - /root/.nuget
+  only:
+    - /^temp*$/
+    - /^master*$/
+    - /^dev*$/
+    - master
+    - dev
+    - stg
+    - nonprod
+    - p1
+    - p2

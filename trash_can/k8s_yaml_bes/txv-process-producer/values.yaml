@@ -1,0 +1,62 @@
+nameOverride: txv-process-producer
+fullnameOverride: txv-process-producer
+
+image:
+  registry: "192.168.64.186"
+  repository: bes/txv-process-producer
+  tag: dev
+  pullPolicy: Always
+imagePullSecrets: []
+
+http:
+  enabled: false
+https:
+  enabled: false
+  
+service:
+  enabled: false
+
+caChainSecretName: ca-chain-secret
+# serverCertSecretName: txv-process-producer-server-tls
+# clientCertSecretName: txv-process-producer-client-tls
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+    }
+
+ingress:
+  enabled: false
+
+replicaCount: 2
+
+containerTimeZone: Asia/Hong_Kong
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: 
+  limits:
+   cpu: 200m
+   memory: 700Mi
+  requests:
+   cpu: 50m
+   memory: 700Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

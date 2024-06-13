@@ -1,0 +1,22 @@
+arbiter:
+  enabled: false
+architecture: replicaset
+auth:
+  enabled: true
+  replicaSetKey: PfNQMLG105
+  rootPassword: 24R?DAGW
+  rootUser: root
+externalAccess:
+  enabled: true
+  service:
+    nodePorts:
+    - 31900
+    - 31901
+    - 31902
+    type: NodePort
+podAnnotations:
+  co.elastic.metrics/raw: '[{"enabled":true,"metricsets":["dbstats", "status", "collstats",
+    "metrics", "replstatus"],"module":"mongodb","period":"1m","timeout":"3s","hosts":["mongodb-c3-0.mongodb-c3-headless.mongodb-c3.svc.cluster.local:27017"],"username":"root","password":"24R?DAGW"}]'
+podAntiAffinityPreset: soft
+replicaCount: 3
+replicaSetName: rs0

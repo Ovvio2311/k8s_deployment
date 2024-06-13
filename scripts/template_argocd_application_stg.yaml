@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: "{{app_name}}"
+  namespace: argocd
+spec:
+  destination:
+    namespace: "{{namespace}}"
+    server: https://kubernetes.default.svc
+  project: "{{namespace}}"
+  source:
+    path: "{{zone_path}}/{{app_folder_name}}"
+    repoURL: "https://gitlab.atlsmartsolutions.com/root/mirrored_k8s_deployment.git"
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - values-stg-common.yaml
+        - values-stg-image-tag.yaml
+        - values-stg-app-settings.yaml
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

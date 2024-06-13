@@ -1,0 +1,93 @@
+variables:
+  CI_REGISTRY: 10.13.0.33:8081
+  CI_REGISTRY_USER: admin
+  CI_REGISTRY_PASSWORD: Autotoll.1234!
+  AWS_Access_Key: $AWS_Access_Key
+  Secret_Access_key: $Secret_Access_key
+  AWS_DEFAULT_REGION: ap-east-1
+  ECR_REPO: 712030900683.dkr.ecr.ap-east-1.amazonaws.com
+  IM_VER: "2.1"
+  
+stages:
+    - build
+    - deploy
+    - test
+  
+build-push-docker-image:
+  image: docker:20
+  stage: build
+  variables:
+    DOCKER_DRIVER: overlay2
+    # below variable come from gitlab global variable, ask gitlab admin
+    CI_REGISTRY: 10.13.0.33:8081
+    CI_REGISTRY_USER: admin
+    CI_REGISTRY_PASSWORD: Autotoll.1234!
+    
+  services:
+    - docker:20-dind
+  before_script:
+    # convert to lower case, convert non-alphanumeric and slash characters to hyphen
+    - HARBOR_REPOSITORIES=`echo $HARBOR_REPOSITORIES | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - IMAGE_REPO="$CI_REGISTRY/$HARBOR_REPOSITORIES"
+    - echo "IMAGE_REPO=$IMAGE_REPO"
+    - echo "CI_REGISTRY=$CI_REGISTRY"
+    - echo "CI_REGISTRY_USER=$CI_REGISTRY_USER"
+    - echo "CI_REGISTRY_PASSWORD=$CI_REGISTRY_PASSWORD"
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - Dockerpath="${Dockerpath}/Dockerfile ."
+    - echo "$Dockerpath"
+  script:
+    - docker build -t "$IMAGE_REPO:latest" -t "$IMAGE_REPO:$CI_COMMIT_REF_SLUG" -t "$IMAGE_REPO:$CI_COMMIT_REF_SLUG-latest" -t "$IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID" -f ${Dockerpath}
+    - docker push "$IMAGE_REPO" --all-tags
+  only:
+    - dev
+    - staging
+    - prod
+
+ECR_push:
+  image: docker:20  
+  stage: deploy
+  variables:
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - HARBOR_REPOSITORIES=`echo $HARBOR_REPOSITORIES | tr '[:upper:]' '[:lower:]' | sed -e 's/[^/^[:alnum:]]/-/g'`
+    - IMAGE_REPO="$CI_REGISTRY/$HARBOR_REPOSITORIES"
+  script:
+    - apk add aws-cli
+    - echo "$IMAGE_REPO"
+    - echo "CI_COMMIT_REF_SLUG"
+    - echo "CI_PIPELINE_IID"
+    - docker pull $IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID
+    # login aws for later implimentation
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws ecr get-login-password --region ap-east-1 --endpoint-url https://api.ecr.ap-east-1.amazonaws.com | docker login --username AWS --password-stdin $ECR_REPO
+    - docker tag $IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID $ECR_REPO/$APP_NAME:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID
+    - docker tag $IMAGE_REPO:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID $ECR_REPO/$APP_NAME:$CI_COMMIT_REF_SLUG-latest 
+    - echo $ECR_REPO/$APP_NAME:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID
+    - docker push $ECR_REPO/$APP_NAME:$CI_COMMIT_REF_SLUG-v0.0.$CI_PIPELINE_IID
+    - docker push $ECR_REPO/$APP_NAME:$CI_COMMIT_REF_SLUG-latest
+    - sleep 10
+  only:
+    - staging
+    - prod
+    
+Restart_deployment:
+  image: 10.13.0.33:8081/vgo/awscli_with_sm:v1  
+  stage: test
+  variables:
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - echo "CI_COMMIT_REF_SLUG"
+    - echo "CI_COMMIT_REF_NAME"
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws ecr get-login-password --region ap-east-1 --endpoint-url https://api.ecr.ap-east-1.amazonaws.com | docker login --username AWS --password-stdin $ECR_REPO 
+    - echo $cluster_name
+    - single_service="$(aws ecs list-services --cluster $cluster_name --region ap-east-1 --no-verify-ssl --output json | grep -oP "${cluster_name}/\K\S+" | tr -d '"')"
+    - echo $single_service
+  script:
+    - aws ecs update-service --cluster $cluster_name --service $single_service --force-new-deployment --region ap-east-1 --no-verify-ssl 
+    - sleep 5
+  rules:
+    - if: $cluster_name != "hsbc-scheduler" && $cluster_name != "prod-hsbc-scheduler" && $cluster_name != null && $CI_COMMIT_REF_SLUG == "staging"

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: demo-argocd
+  name: https-confmap
+data:
+  https.conf: |-
+    server {
+        listen 443 ssl;
+        ssl_certificate /etc/nginx/ssl/simple-nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/simple-nginx.key;
+        location / {
+            root   /usr/share/nginx/html/https/;
+            index  https_page.html;
+        }
+    }
+  https_page.html: |-
+    <h1>Welcome, This is demo-argocd https page.</h1>

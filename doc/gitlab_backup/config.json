@@ -1,0 +1,12 @@
+{
+        "version": "10",
+        "aliases": {
+                "myminio": {
+                        "url": "http://192.168.64.131:9000",
+                        "accessKey": "gXFJMGgZN9g2AL3D",
+                        "secretKey": "KbODvGjeemQT6eeOrvBEEZLwlTk09oju",
+                        "api": "s3v4",
+                        "path": "auto"
+                }
+        }
+}

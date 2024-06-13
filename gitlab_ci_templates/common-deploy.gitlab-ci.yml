@@ -1,0 +1,63 @@
+   
+  
+Deployment:
+  # image: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+  image: google/cloud-sdk:473.0.0
+  stage: deploy
+  tags:
+    - dind
+  needs:
+    - job: build-push-docker-image
+  variables:
+    GIT_STRATEGY: none
+    # ARGOCD_SERVER: "192.168.64.170:31005"    
+    # below variable come from gitlab global variable, ask gitlab admin
+    # ARGOCD_USERNAME: "admin"
+    # ARGOCD_PASSWORD: "XXXXXX"
+  before_script:
+    - ARGOCD_PROJECT_NAME=`echo $ARGOCD_PROJECT_NAME | tr '[:upper:]' '[:lower:]' | sed -e 's/[_]/-/g'`    
+    - apt-get install jq -y
+    # - curl -L -o /usr/bin/jq.exe https://github.com/stedolan/jq/releases/latest/download/jq-win64.exe        
+    # - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    # - sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    # - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apk add --update openssh )'
+    # - mkdir -p /root/.ssh
+    # - touch /root/.ssh/id_rsa /root/.ssh/config /root/.ssh/known_hosts
+    # - chmod 600 /root/.ssh/id_rsa    
+    # - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > /root/.ssh/id_rsa
+    # - eval $(ssh-agent -s)
+    # - ssh-add /root/.ssh/id_rsa                     
+    # - chmod 600 /root/.ssh/known_hosts
+    # - ssh-keyscan -H $VM_IPADDRESS>> /root/.ssh/known_hosts
+  after_script:    
+    - rm ${HOME}/gcloud-service-key.json
+    - rm ${HOME}/k8s_deployment -r
+    - ls ${HOME}/
+    - ls -la /builds/0/FYP_PORTAL
+  script:  
+    # install gke auth to kubectl
+    # - curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-466.0.0-linux-x86_64.tar.gz
+    # - tar -xf google-cloud-cli-466.0.0-linux-x86_64.tar.gz
+    # - ./google-cloud-sdk/install.sh
+    # - gcloud components install gke-gcloud-auth-plugin -y 
+    - test_yaml=$(curl --insecure -H "PRIVATE-TOKEN:${cicd_api_token}" "${CI_API_V4_URL}/projects/3/repository/files/k8s_argocd_yaml%2Fdev%2Ffyp%2Fargo-$ARGOCD_PROJECT_NAME.yaml?ref=main")    
+    - content=$(echo $test_yaml | jq .content | base64 -d --ignore-garbage)
+    - echo "$content" >> argo-$ARGOCD_PROJECT_NAME.yaml
+    - echo $content
+    # - git -c http.sslVerify=false clone https://$clone_k8s_deploy_user:$clone_k8s_deploy_pw@$gitlab_ip:30443/root/k8s_deployment.git
+    # - ls
+    # - mkdir ${HOME}/k8s_deployment/
+    # - mv k8s_deployment/* ${HOME}/k8s_deployment/
+    # - ls ${HOME}/
+    - echo $gcp_registry_key > ${HOME}/gcloud-service-key.json
+    - gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+    - gcloud config list
+    - gcloud container clusters get-credentials fyp-vpc-cluster --zone us-central1-c --project my-project-4108m
+    # - cat ${HOME}/k8s_deployment/k8s_argocd_yaml/dev/fyp/argo-$ARGOCD_PROJECT_NAME.yaml   
+    - pwd
+    - kubectl apply -f argo-$ARGOCD_PROJECT_NAME.yaml    
+  only:
+    - master
+    - dev
+
+

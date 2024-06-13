@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: "auth-api"
+  namespace: argocd
+spec:
+  destination:
+    namespace: "fyp"
+    server: https://kubernetes.default.svc
+  project: "default"
+  source:
+    path: "k8s_yaml/fyp/auth-api"
+    repoURL: "https://34.121.50.49:30443/root/k8s_deployment.git"
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - values-dev-common.yaml
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

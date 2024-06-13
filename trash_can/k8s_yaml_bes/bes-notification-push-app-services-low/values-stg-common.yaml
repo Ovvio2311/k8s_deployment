@@ -1,0 +1,18 @@
+image:
+  registry: "harbor.atlsmartsolutions.com"
+
+config:
+  dotnetEnv: "K8S_STG"
+  Kestrel__EndpointDefaults__ClientCertificateMode: "AllowCertificate"
+  Serilog__MinimumLevel__Default: "Debug"
+  Serilog__MinimumLevel__Override__Default: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__WriteTo__0__Name: "Logger"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Name: "Elasticsearch"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__autoRegisterTemplate: "True"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__emitEventFailure: "WriteToSelfLog"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__connectionTimeout: "2"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__indexFormat: "bes-notification-push-app-services-low-elasticsearch-{0:yyyy.MM.dd}"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__nodeUris: "http://10.14.0.79:9200/"
+
+  Serilog__WriteTo__1__Name: "Console"

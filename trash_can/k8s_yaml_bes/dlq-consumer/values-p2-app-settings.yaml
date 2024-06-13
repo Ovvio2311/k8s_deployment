@@ -1,0 +1,12 @@
+replicaCount: 4
+
+config:
+  dotnetEnv: "K8S_P2"
+  appsettings: |
+    {
+      "PulsarConsumer": {
+        "topic": "persistent://das/tsca/das_middleware_(idax01_trxn_upload|idax02_evid_upload|imgobj_idax02_evid_upload)(.*_assign_dlq)",
+        "PulsarUri": "pulsar://p2vias-tdffsbe-tpuln1-01.iaas.gcis.hksarg:6650,p2vias-tdffsbe-tpuln2-01.iaas.gcis.hksarg:6650,p2vias-tdffsbe-tpuln3-01.iaas.gcis.hksarg:6650",
+        "subscription": "DLQConsumer"
+      }
+    }

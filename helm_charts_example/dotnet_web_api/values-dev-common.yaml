@@ -1,0 +1,22 @@
+image:
+  registry: "192.168.64.186"
+
+config:
+  dotnetEnv: "K8S_DEV"
+  Kestrel__EndpointDefaults__ClientCertificateMode: "AllowCertificate"
+
+  Serilog__MinimumLevel__Default: "Debug"
+  Serilog__MinimumLevel__Override__Default: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__WriteTo__0__Name: "Logger"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Name: "Elasticsearch"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__autoRegisterTemplate: "True"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__emitEventFailure: "WriteToSelfLog"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__connectionTimeout: "2"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__indexFormat: "ffts-new-app-name-{0:yyyy.MM.dd}"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__nodeUris: "http://192.168.64.130:9200"
+
+  Serilog__WriteTo__1__Name: "Console"
+
+  Serilog__Enrich__0: "FromLogContext"
+  Serilog__Enrich__1: "WithMachineName"

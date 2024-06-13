@@ -1,0 +1,23 @@
+image:
+  registry: "172.20.148.130:8083"
+
+config:
+  dotnetEnv: "K8S_P2"
+  EnableEd25519AuthenticationPlugin: "true"
+  Kestrel__Certificates__Default__Path: null
+  Kestrel__Certificates__Default__KeyPath: null
+  Kestrel__EndpointDefaults__ClientCertificateMode: "AllowCertificate"
+
+  Serilog__MinimumLevel__Default: "Debug"
+  Serilog__MinimumLevel__Override__Default: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__WriteTo__0__Name: "Logger"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Name: "Elasticsearch"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__autoRegisterTemplate: "True"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__emitEventFailure: "WriteToSelfLog"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__connectionTimeout: "2"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__indexFormat: "bes-notification-consumer-high-elasticsearch-{0:yyyy.MM.dd}"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__nodeUris: "http://172.20.148.145:9200;http://172.20.148.146:9200;http://172.20.148.147:9200;http://172.20.148.148:9200"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__connectionGlobalHeaders: "Authorization=Basic bG9nc3Rhc2hfaW50ZXJuYWw6QXRsQDIwMjI="
+
+  Serilog__WriteTo__1__Name: "Console"

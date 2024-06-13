@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: elasticsearch
+spec:
+  ports:
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  namespace: kube-system
+  name: elasticsearch
+subsets:
+  - addresses:
+      - ip: 172.24.148.145
+      - ip: 172.24.148.146
+      - ip: 172.24.148.147
+      - ip: 172.24.148.148
+    ports:
+      - port: 9200

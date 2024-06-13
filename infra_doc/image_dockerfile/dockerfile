@@ -1,0 +1,4 @@
+FROM google/cloud-sdk:alpine
+RUN apk update
+RUN gcloud components install gke-gcloud-auth-plugin kubectl
+CMD ["bash"]

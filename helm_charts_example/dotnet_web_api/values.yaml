@@ -1,0 +1,62 @@
+nameOverride: new-app-name
+fullnameOverride: new-app-name
+
+image:
+  registry: "192.168.64.186"
+  repository: bes/new-app-name
+  tag: master
+  pullPolicy: Always
+imagePullSecrets: []
+
+http:
+  enabled: true
+  port: 80
+https:
+  enabled: false
+  port: 443
+
+service:
+  enabled: true
+  type: NodePort
+  # node port 30000-32767
+  httpNodePort: <http-node-port>
+  # httpsNodePort: <https-node-port>
+
+caChainSecretName: ca-chain-secret
+# serverCertSecretName: new-app-name-server-tls
+# clientCertSecretName: new-app-name-client-tls
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+    }
+
+ingress:
+  enabled: false
+
+replicaCount: 3
+
+containerTimeZone: Asia/Hong_Kong
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

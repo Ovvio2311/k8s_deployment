@@ -1,0 +1,34 @@
+
+services:
+  dind:
+    container_name: dind
+    image: docker:23-dind
+    restart: always
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ''
+    command:
+      - --storage-driver=overlay2
+    networks:
+      - gitlab-runner
+    volumes:
+      - /srv/gitlab-runner/192.168.64.186.crt:/etc/docker/certs.d/192.168.64.186/ca.crt
+      - dind_data:/var/lib/docker
+  runner:
+    user: root
+    container_name: runner
+    restart: always
+    image: docker.io/gitlab/gitlab-runner:v15.8.2
+    depends_on:
+      - dind
+    environment:
+      - DOCKER_HOST=tcp://dind:2375
+    volumes:
+      - /srv/gitlab-runner/config:/etc/gitlab-runner
+    networks:
+      - gitlab-runner
+networks:
+  gitlab-runner: {}
+
+volumes:
+  dind_data:

@@ -1,0 +1,60 @@
+nameOverride: dlq-consumer
+fullnameOverride: dlq-consumer
+
+image:
+  repository: bes/dlq-consumer
+  tag: master
+  pullPolicy: Always
+imagePullSecrets: []
+
+http:
+  enabled: false
+https:
+  enabled: false
+
+service:
+  enabled: false
+
+caChainSecretName: ca-chain-secret
+# clientCertSecretName: dlq-consumer-client-tls
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+    }
+
+ingress:
+  enabled: false
+
+replicaCount: 2
+
+containerTimeZone: Asia/Hong_Kong
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: 
+  limits:
+   cpu: 300m
+   memory: 1300Mi
+  requests:
+   cpu: 50m
+   memory: 100Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

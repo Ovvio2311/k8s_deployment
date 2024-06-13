@@ -1,0 +1,9 @@
+sentinel:
+  enabled: true
+  masterSet: api-cache-master
+  # service:
+  #   type: NodePort
+  #   nodePorts:
+  #     redis: 31801
+  #     sentinel: 31805
+  #   loadBalancerIP: 192.168.64.170

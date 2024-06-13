@@ -1,0 +1,35 @@
+replicaCount: 4
+
+config:
+  dotnetEnv: "K8S_STG"
+  appsettings: |
+    {
+      "MySQL": {
+        "ConnectionString": "server=10.14.0.91;Database=bes_core;uid=admin;pwd=admin;Pooling=true;MaximumPoolsize=1000;MinimumPoolSize=2;CharSet=utf8;default command timeout=600;Allow User Variables=True;SslMode=none;"
+      },
+      "Pulsar": {
+        "Producer": {
+          "EnablePulsarClientLogger": true,
+          "topicPrefix": "persistent://public/default/",
+          "topicBackLogPrefix": "persistent://public/default/",
+          "imgTopicPrefix": "persistent://public/default/das_middleware_imgobj",
+          "pulsarUri": "pulsar://10.14.0.77:6650,10.14.0.78:6650,10.14.0.90:6650"
+        }
+      },
+      "handle_paired_up_obj_to_process_tb": {
+        "isEnable": false,
+        "unp_tb": false,
+        "raw_tb": false
+      },
+      "send_to_pulsar": {
+        "isEnable": true,
+        "paired_only": true
+      },
+      "mv_not_process": true,
+      "start_date": "",
+      "end_date": "",
+      "interval_mins": 10,
+      "EnableBatching": false,
+      "BatchingMaxMessages": 5
+    }
+

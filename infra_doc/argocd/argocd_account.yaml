@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  policy.csv: |
+    p, role:restart_app, applications, *, */*, allow
+    p, role:restart_app, repositories, *, */*, allow
+    p, role:restart_app, projects, *, */*, allow
+    p, role:restart_app, accounts, *, *, allow
+    g, robot_gitlab, role:restart_app
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  accounts.robot_gitlab: apiKey

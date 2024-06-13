@@ -1,0 +1,10 @@
+variables:
+  # ZONE: dmz-bes | bes-job | bes | toms
+  ZONE: "bes-job"
+  ARGOCD_PROJECT_NAMESPACE: "bes"
+  ARGOCD_PROJECT_NAME: <app-name>
+  HARBOR_REPOSITORIES: "bes/<app-name>"
+
+include:
+  - project: "bes/k8s_deployment"
+    file: "/gitlab_ci_templates/common.gitlab-ci.yml"

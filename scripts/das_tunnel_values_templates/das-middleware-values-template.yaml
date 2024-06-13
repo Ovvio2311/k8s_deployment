@@ -1,0 +1,29 @@
+nameOverride: das-middleware-{{toll_domain_abb}}{{video_suffix}}
+fullnameOverride: das-middleware-{{toll_domain_abb}}{{video_suffix}}
+
+service:
+  enabled: true
+  type: NodePort
+  httpNodePort: {{http_node_port}}
+  httpsNodePort: {{https_node_port}}
+  
+serverCertSecretName: das-middleware-{{toll_domain_abb}}-server-tls
+
+replicaCount: 10
+
+config:
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__indexFormat: "das-middleware-{{toll_domain_abb}}-elasticsearch-{0:yyyy.MM.dd}"
+
+  OtherService__DasApi__BaseUrl: "{{das_api_base_url}}"
+  TollDomainID: "{{toll_domain_id}}"
+  Pulsar__Producer__topicPrefix: persistent://das/{{toll_domain_abb}}/das_middleware
+  Pulsar__Producer__imgTopicPrefix: persistent://das/{{toll_domain_abb}}/das_middleware_imgobj
+  Pulsar__Producer__topicBackLogPrefix: persistent://das/{{toll_domain_abb}}/das_middleware_backlog
+  Pulsar__Producer__imgBackLogTopicPrefix: persistent://das/{{toll_domain_abb}}/das_middleware_imgobj_backlog
+  Pulsar__Producer__chunkTopicList__0__topicPreifx: persistent://das/{{toll_domain_abb}}/das_middleware_chunk
+  Pulsar__Producer__chunkTopicList__1__topicPreifx: persistent://das/{{toll_domain_abb}}/das_middleware_chunk2
+  Pulsar__Producer__chunkTopicList__2__topicPreifx: persistent://das/{{toll_domain_abb}}/das_middleware_chunk3
+  Pulsar__Producer__chunkImgTopicList__0__topicPreifx: persistent://das/{{toll_domain_abb}}/das_middleware_chunk_imgobj
+  Pulsar__Producer__chunkBackLogTopicList__0__topicPreifx: persistent://das/{{toll_domain_abb}}/das_middleware_chunk_backlog
+  Pulsar__Producer__chunkBackLogImgTopicList__0__topicPreifx: persistent://das/{{toll_domain_abb}}/das_middleware_chunk_imgobj_backlog
+  ### do not use appsetting.json here, use env var only, online tools to help https://www.coderstool.com/flatten-json, Delimiter is (two underscore) = __

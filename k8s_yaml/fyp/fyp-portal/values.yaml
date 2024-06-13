@@ -1,0 +1,88 @@
+nameOverride: fyp-portal
+fullnameOverride: fyp-portal
+
+image:
+  # registry: "us-central1-docker.pkg.dev/my-project-4108m/fyp-container-registry"
+  repository: fyp-portal
+  tag: master
+  pullPolicy: Always
+imagePullSecrets: []
+
+http:
+  enabled: true
+  port: 80
+https:
+  enabled: true
+  port: 443
+
+service:
+  enabled: true
+  type: ClusterIP
+  # node port 30000-32767
+  # httpNodePort: 32230
+  # httpsNodePort: 32240
+
+caChainSecretName: ca-chain-secret
+serverCertSecretName: common-server-tls
+# clientCertSecretName: auth-api-client-tls
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+    }
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-cluster-issuer
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 30m
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 256k
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+    nginx.ingress.kubernetes.io/proxy-max-temp-file-size: 2048m
+  path: /
+  pathType: ImplementationSpecific
+  hosts:
+    - myfitnessgym.me
+  tls:
+    - secretName: fyp-portal-server-tls
+      hosts:
+        - myfitnessgym.me
+  servicePortName: https
+
+clusterRole:
+  enabled: true
+  serviceAccountName: fyp-portal
+  
+replicaCount: 1
+
+containerTimeZone: Asia/Hong_Kong
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: {}
+
+nodeSelector: {
+  iam.gke.io/gke-metadata-server-enabled: "true"
+}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,66 @@
+concurrent = 10
+check_interval = 0
+shutdown_timeout = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "docker-dind-runner"
+  concurrent = 5
+  url = "https://192.168.64.188:443/"
+  id = 48
+  token = "iC3Y2jxRzxrEaxRLz4Am"
+  token_obtained_at = 2023-02-16T08:47:40Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker"
+  builds_dir = "/builds"
+  cache_dir = "/cache"
+  environment = ["GIT_CLONE_PATH=$CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_NAME"]
+  [runners.custom_build_dir]
+    enabled = true
+  [runners.docker]
+    tls_verify = false
+    image = "docker:23"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/var/run/docker.sock:/var/run/docker.sock", "/etc/docker/certs.d:/etc/docker/certs.d", "/builds:/builds", "/cache:/cache" ]
+    shm_size = 0
+
+[[runners]]
+  name = "shell-runner"
+  url = "https://192.168.64.188:443/"
+  id = 50
+  token = "FarFqpiTB-AgkQxT8-T6"
+  token_obtained_at = 2023-02-20T09:54:29Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "shell"
+  builds_dir = "/srv/gitlab-runner/builds"
+  cache_dir = "/srv/gitlab-runner/cache"
+  environment = ["GIT_CLONE_PATH=$CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_NAME"]
+  [runners.custom_build_dir]
+    enabled = true
+
+[[runners]]
+  name = "docker-non-concurrent-runner"
+  concurrent = 1
+  url = "https://192.168.64.188:443/"
+  id = 52
+  token = "U6rxmnDWxHZBbfCSN2E2"
+  token_obtained_at = 2023-02-28T08:44:37Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker"
+  environment = ["GIT_CLONE_PATH=$CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_NAME"]
+  [runners.cache]
+    MaxUploadedArchiveSize = 0
+  [runners.docker]
+    tls_verify = false
+    image = "docker:23"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/var/run/docker.sock:/var/run/docker.sock", "/etc/docker/certs.d:/etc/docker/certs.d", "/cache"]
+    shm_size = 0

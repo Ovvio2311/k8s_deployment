@@ -1,0 +1,179 @@
+{{- $fullName := include "autotoll-dotnet.fullname" . -}}
+{{- $name := include "autotoll-dotnet.name" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ $name }}
+    chart: {{ template "autotoll-dotnet.chart" . }}
+    draft: {{ .Values.draft | default "draft-app" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  revisionHistoryLimit: 0
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        draft: {{ .Values.draft | default "draft-app" }}
+        release: {{ .Release.Name }}
+      annotations:
+        buildID: {{ .Values.buildID | default "" | quote }}
+        checksum/config: {{ include (print $.Template.BasePath "/dotnet-config-cm.yaml") . | sha256sum }}
+    spec:
+      {{- if (.Values.clusterRole).enabled }}
+      serviceAccountName: {{ $fullName }}
+      {{- end }}
+      volumes:
+      - name: dotnet-config-volume
+        configMap: 
+          name: {{ $name }}-dotnet-config-cm
+      {{- if .Values.caChainSecretName }}
+      - name: ca-chain-secret-volume
+        secret: 
+          secretName: {{ .Values.caChainSecretName }}
+      {{- end }}
+      {{- if and (.Values.serverCertSecretName) ((.Values.https).enabled) }}
+      - name: server-cert-secret-volume
+        secret: 
+          secretName: {{ .Values.serverCertSecretName }}
+      {{- end }}
+      {{- if .Values.clientCertSecretName }}
+      - name: client-cert-secret-volume
+        secret: 
+          secretName: {{ .Values.clientCertSecretName }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+
+          {{- if .Values.image.registry }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- end }}
+
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            {{- if (.Values.http).enabled }}
+            - name: http
+              containerPort: {{ .Values.http.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if (.Values.https).enabled }}
+            - name: https
+              containerPort: {{ .Values.https.port }}
+              protocol: TCP
+            {{- end }}
+          {{- if .Values.probes.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- end }}
+          envFrom: 
+            - configMapRef:
+                name: {{ $fullName }}-dotnet-config-cm
+          env:                        
+            - name: ASPNETCORE_URLS
+              value: "{{- if (.Values.http).enabled -}}http://+:{{ .Values.http.port }};{{- end -}}{{- if (.Values.https).enabled -}}https://+:{{ .Values.https.port }};{{- end -}}"
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom: 
+                configMapKeyRef:
+                  name: {{ $name }}-dotnet-config-cm
+                  key: dotnetEnv
+            - name: DOTNET_ENVIRONMENT
+              valueFrom: 
+                configMapKeyRef:
+                  name: {{ $name }}-dotnet-config-cm
+                  key: dotnetEnv
+            {{- if .Values.containerTimeZone }}
+            - name: TZ
+              value: {{ .Values.containerTimeZone }}
+            {{- end }}
+            {{- $root := . }}
+            {{- range $ref, $values := .Values.secrets }}
+            {{- range $key, $value := $values }}
+            - name: {{ $ref }}_{{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-{{ $ref | lower }}
+                  key: {{ $key }}
+            {{- end }}
+            {{- end }}
+            {{- if and (.Values.serverCertSecretName) ((.Values.https).enabled) }}
+            - name: Kestrel__Certificates__Default__Path
+              value: "/app/server-cert-volume/tls.crt"
+            - name: Kestrel__Certificates__Default__KeyPath
+              value: "/app/server-cert-volume/tls.key"
+            - name: Kestrel__Certificates__Default__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serverCertSecretName }}
+                  key: password
+                  optional: true
+            {{- end }}
+            {{- if .Values.clientCertSecretName }}
+            - name: ClientCertConfig__Path
+              value: "/app/client-cert-volume/tls.crt"
+            - name: ClientCertConfig__KeyPath
+              value: "/app/client-cert-volume/tls.key"
+            - name: ClientCertConfig__PasswordPath
+              value: "/app/client-cert-volume/password.txt"
+            {{- end }}
+          volumeMounts:
+          - name: dotnet-config-volume
+            mountPath: "/app/appsettings.{{ .Values.config.dotnetEnv }}.json"
+            subPath: "appsettings.{{ .Values.config.dotnetEnv }}.json"
+            readOnly: true
+          {{- if .Values.caChainSecretName }}
+          - name: ca-chain-secret-volume
+            mountPath: "/etc/ssl/certs/ca.crt"
+            subPath: "ca.crt"
+            readOnly: true
+          {{- end }}
+          {{- if and (.Values.serverCertSecretName) ((.Values.https).enabled) }}
+          - name: server-cert-secret-volume
+            mountPath: "/app/server-cert-volume/"
+            readOnly: true
+          {{- end }}
+          {{- if .Values.clientCertSecretName }}
+          - name: client-cert-secret-volume
+            mountPath: "/app/client-cert-volume/"
+            readOnly: true
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: "{{ $name }}"
+              topologyKey: "kubernetes.io/hostname"
+    {{- with .Values.affinity }}
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

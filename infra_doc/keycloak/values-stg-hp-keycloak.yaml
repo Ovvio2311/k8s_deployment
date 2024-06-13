@@ -1,0 +1,62 @@
+
+route:
+  tls:
+    enabled: false
+    
+extraEnv: |
+  - name: PROXY_ADDRESS_FORWARDING
+    value: "true"
+  - name: KEYCLOAK_PROXY_ADDRESS_FORWARDING
+    value: "true"
+
+  - name: DB_VENDOR
+    value: mariadb
+  - name: DB_ADDR
+    value: 10.14.0.91
+  - name: DB_PORT
+    value: "3306"
+  - name: DB_DATABASE
+    value: keycloak
+
+  - name: JGROUPS_DISCOVERY_PROTOCOL
+    value: kubernetes.KUBE_PING
+  - name: KUBERNETES_NAMESPACE
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: metadata.namespace
+  - name: CACHE_OWNERS_COUNT
+    value: "3"
+  - name: CACHE_OWNERS_AUTH_SESSIONS_COUNT
+    value: "3"
+extraEnvFrom: |
+  - secretRef:
+      name: '{{ include "keycloak.fullname" . }}-db'
+postgresql:
+  enabled: false
+rbac:
+  create: true
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+replicas: 3
+resources: {}
+secrets:
+  db:
+    stringData:
+      DB_PASSWORD: admin
+      DB_USER: admin
+      KEYCLOAK_PASSWORD: b6573z3e
+      KEYCLOAK_USER: admin
+service:
+  httpManagementNodePort: 32607
+  httpNodePort: 32605
+  httpsNodePort: 32606
+  type: NodePort
+test:
+  enabled: true

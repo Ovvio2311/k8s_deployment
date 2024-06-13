@@ -1,0 +1,25 @@
+﻿{{- if .Values.config }}
+
+{{- $dotnetEnv := .Values.config.dotnetEnv -}}
+{{- $appsettings := .Values.config.appsettings -}}
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "autotoll-dotnet.fullname" . }}-dotnet-config-cm
+data: 
+{{- if $dotnetEnv }}
+  dotnetEnv: "{{ $dotnetEnv }}"
+{{- if $appsettings }}
+  appsettings.{{ $dotnetEnv }}.json: |
+{{ $appsettings | indent 4 }}
+{{- end }}
+{{- end }}
+
+{{- range $key, $value := .Values.config }}
+{{- if and (ne $key "appsettings") (ne $key "dotnetEnv") }}
+  {{ $key }}: "{{ $value }}"
+{{- end }}
+{{- end }}
+{{- end }}
+

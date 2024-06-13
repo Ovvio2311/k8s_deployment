@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: "{{app_name}}"
+  namespace: argocd
+spec:
+  destination:
+    namespace: "{{namespace}}"
+    server: https://kubernetes.default.svc
+  project: "default"
+  source:
+    path: "{{zone_path}}/{{app_folder_name}}"    
+    repoURL: "http://172.24.148.130/root/mirrored_k8s_deployment.git"
+    targetRevision: master
+    helm:
+      valueFiles:
+        - values-nonprod-common.yaml
+        - values-nonprod-image-tag.yaml
+        - values-nonprod-app-settings.yaml
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
