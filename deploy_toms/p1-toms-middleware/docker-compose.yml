@@ -1,0 +1,49 @@
+services:
+  toms-middleware:
+    container_name: toms-middleware
+    image: bes/toms-middleware:p1
+    restart: unless-stopped
+    ports:
+      - "31002:80"
+      - "32002:443"
+    networks:
+      - toms
+    environment:
+      TZ: "Asia/Hong_Kong"
+      ASPNETCORE_URLS: "http://+:80;https://+:443;"
+      ASPNETCORE_ENVIRONMENT: "p1"
+      DOTNET_ENVIRONMENT: "p1"
+      Kestrel__Certificates__Default__Path: "/app/Certs/toms-middleware-server-crt.pem"
+      Kestrel__Certificates__Default__KeyPath: "/app/Certs/toms-middleware-server-key.pem"
+    volumes:
+      - "/mnt/data/toms/toms-ca-chain.pem:/etc/ssl/certs/ca.crt"
+      - "/mnt/data/toms/toms-middleware.appsettings.p1.json:/app/appsettings.p1.json"
+      - "/mnt/data/toms/toms-middleware-server-crt.pem:/app/Certs/toms-middleware-server-crt.pem"
+      - "/mnt/data/toms/toms-middleware-server-key.pem:/app/Certs/toms-middleware-server-key.pem"
+  mongodb:
+    container_name: mongodb
+    image: "bitnami/mongodb:4.4.11-debian-10-r12"
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    networks:
+      - toms
+    environment:
+      MONGODB_ROOT_PASSWORD: Atl@2022
+    volumes:
+      - "/mnt/data/mongodb:/bitnami/mongodb"
+  # nginx:
+  #   container_name: toms-middleware
+  #   image: nginx:1.22.1
+  #   restart: unless-stopped
+  #   networks:
+  #     toms:
+  #       aliases:
+  #         - das-middleware
+  #         - das-middleware-smt
+  #         - das-middleware-lrt
+  #   volumes:
+  #     - "/mnt/data/toms/nginx.conf:/etc/nginx/nginx.conf"
+
+networks:
+  toms: {}

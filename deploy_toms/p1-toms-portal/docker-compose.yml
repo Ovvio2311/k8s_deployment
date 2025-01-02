@@ -1,0 +1,26 @@
+services:
+  toms-portal:
+    container_name: toms-portal
+    image: bes/toms-portal:p1
+    restart: unless-stopped
+    ports:
+      - "31030:80"
+      - "32030:443"
+    networks:
+      - toms
+    environment:
+      TZ: "Asia/Hong_Kong"
+      ASPNETCORE_URLS: "http://+:80;https://+:443;"
+      ASPNETCORE_ENVIRONMENT: "nonprod"
+      DOTNET_ENVIRONMENT: "nonprod"
+      Kestrel__Certificates__Default__Path: "/app/Certs/toms-portal-server-crt.pem"
+      Kestrel__Certificates__Default__KeyPath: "/app/Certs/toms-portal-server-key.pem"
+    volumes:
+      - "/mnt/data/toms/toms-ca-chain.pem:/etc/ssl/certs/ca.crt"
+      - "/mnt/data/toms/toms-portal.appsettings.nonprod.json:/app/appsettings.nonprod.json"
+      - "/mnt/data/toms/toms-portal-server-crt.pem:/app/Certs/toms-portal-server-crt.pem"
+      - "/mnt/data/toms/toms-portal-server-key.pem:/app/Certs/toms-portal-server-key.pem"
+      - "/mnt/data/toms/protection_key/:/app/protection_key/"
+
+networks:
+  toms: {}

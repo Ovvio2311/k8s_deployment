@@ -1,0 +1,36 @@
+services:
+  toms-api:
+    container_name: toms-api
+    image: "bes/toms-api:p1"
+    restart: unless-stopped
+    ports:
+      - "31001:80"
+    networks:
+      - toms
+    environment:
+      TZ: "Asia/Hong_Kong"
+      ASPNETCORE_URLS: "http://+:80;"
+      ASPNETCORE_ENVIRONMENT: "p1"
+      DOTNET_ENVIRONMENT: "p1"
+    volumes:
+      - "/mnt/data/toms/toms-ca-chain.pem:/etc/ssl/certs/ca.crt"
+      - "/mnt/data/toms/toms-api.appsettings.p1.json:/app/appsettings.p1.json"
+  auth-api:
+    container_name: auth-api
+    image: "bes/auth-api:p1"
+    restart: unless-stopped
+    ports:
+      - "31004:80"
+    networks:
+      - toms
+    environment:
+      TZ: "Asia/Hong_Kong"
+      ASPNETCORE_URLS: "http://+:80;"
+      ASPNETCORE_ENVIRONMENT: "p1"
+      DOTNET_ENVIRONMENT: "p1"
+    volumes:
+      - "/mnt/data/toms/toms-ca-chain.pem:/etc/ssl/certs/ca.crt"
+      - "/mnt/data/toms/auth-api.appsettings.p1.json:/app/appsettings.p1.json"
+
+networks:
+  toms: {}

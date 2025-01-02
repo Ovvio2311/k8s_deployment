@@ -1,0 +1,4 @@
+# su -c "user00 > /etc/cron.allow"
+# su user00
+# crontab -e
+1 * * * * curl --silent -X 'GET' 'http://172.24.150.2:31001/CertManage/TOMS_CRT017_ExpiredCert' -H 'accept: text/plain'

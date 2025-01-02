@@ -1,0 +1,40 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.Hosting.Lifetime": "Information"
+      }
+    },
+    "WriteTo": [{ "Name": "" }, { "Name": "Console" }],
+    "Enrich": ["WithMachineName", "WithThreadId"]
+  },
+  "MongoDB": {
+    "ConnectionString": "mongodb://root:Atl%402022@172.24.150.3:27017/"
+  },
+  "OtherService": {
+    "toms_api": {
+      "BaseUrl": "http://172.24.150.2:31001/"
+    }
+  },
+  "KeycloakSetting": {
+    "URI": "http://172.24.150.3:8080",
+    "id": "keycloak",
+    "password": "Atl@2022",
+    "Realm": "TOMS",
+    "ClientSettings": {
+      "Clients": [
+        {
+          "Client_ID": "TOMS",
+          "Client_Secret": "5ca3cffc-e8d8-4bd1-a3d6-65166cc94d8f"
+        }
+      ]
+    }
+  },
+  "JWTSetting": {
+    "Authority": "http://172.24.150.3:8080/auth/realms/TOMS",
+    "Audience": "account",
+    "PublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr19PTtlUMrtAYrL3BZy4tCHZAR9agmLgpxbESz66vQe+m5f+0Pn2fjO7OSxFkhDf5khG/d6KijpMhaY7ngW2ZSXB3hcAgHb4EK0LQ31DQWKOUe6vmN2HuJSL9cXmKspMqj37eI07mvVU3/2en66JHcP8h8/skaYGpyc8XzFEK37kmD4v1Xk74ppBQIVBlBm/KsLbGqZQc7bmAFUpvrd+td4PSpSekIe8mSv1ZQKTqnpy68/anKixNhw46kkR1KcMgO/o9kdz75oYS8HJKDb4Ja7sJA/5fG/gs0wEdIItBWQZJk8425NX/fdiqQ4X03nlCEjMAiApD3IfixSzpzrNwwIDAQAB"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "SignalrHubUrl": "http://172.20.148.105:31011/notificationhub",
+  "NotificationAPIHost": "http://172.20.148.105:31011/",
+  "NotificationHubURL": "http://172.20.148.105:31011/notificationhub",
+  "AuthAPIHost": "http://172.20.150.2:31004/",
+  "AppAPIHost": "http://172.20.150.2:31001/",
+  "JwtIssuer": "http://172.20.150.3:8080/auth/realms/TOMS",
+  "JwtValidIssuer1": "http://172.20.150.3:8080/auth/realms/TOMS",
+  "JwtValidIssuer2": "http://172.20.150.3:8080/auth/realms/TOMS",
+  "PublicKeyString": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqn0kcNo7+jIm5Jj9ZTGtu4ZTyPw+V0RFPZmbjez33eMMW6OwRnbjKegRHkJ9SJvhorL/G5qXpQxbxZepzgarOgltVFJStkhO0gwalv09a21g7FTerJJ++SxfLM7t2S4fe2tH4eZGdVgiDU8EKR5lmv0U2w3zEqW9eK/31juxqhmewL9wXUlcwRJRns4UR01tICxNBQjE4N5Mz80MaqjapaAmI/d72AzSyA6ioGM1+k9Ewq6/7If/SPGlAovZrVV8llqd4Qqfawl5mTsvAlgVRnD2fyEPIhIqGYuYNk4FuXnlFrnqhF7Qimsrk4nORBCv5bb2J3dE51PTXll/mZSCXQIDAQAB"
+}

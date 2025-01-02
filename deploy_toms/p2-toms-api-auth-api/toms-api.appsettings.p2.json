@@ -1,0 +1,27 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.Hosting.Lifetime": "Information"
+      }
+    },
+    "WriteTo": [{ "Name": "" }, { "Name": "Console" }]
+  },
+  "MySQL": {
+    "ConnectionString": "server=p2vdbs-tdffsbe-ptomsdb4-ha1.dbaas.gcis.hksarg,p2vdbs-tdffsbe-ptomsdb4-ha2.dbaas.gcis.hksarg;Port=19307;Database=toms;uid=besdb_user;pwd=Autotoll5678!;Pooling=true;MaximumPoolsize=100;CharSet=utf8;default command timeout=600;Allow User Variables=True;"
+  },
+  "OtherService": {
+    "toms_middleware_api": {
+      "BaseUrl": "https://172.20.151.121:32030/"
+    }
+  },
+  "EnableEd25519AuthenticationPlugin": true,
+  "AuthAPIHost": "http://auth-api/",
+  "Kestrel": {
+    "EndpointDefaults": {
+      "ClientCertificateMode": "AllowCertificate"
+    }
+  }
+}

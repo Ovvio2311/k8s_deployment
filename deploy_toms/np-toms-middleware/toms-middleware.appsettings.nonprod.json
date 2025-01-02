@@ -1,0 +1,41 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.Hosting.Lifetime": "Information"
+      }
+    },
+    "WriteTo": [{ "Name": "" }, { "Name": "Console" }]
+  },
+  "MongoDB": {
+    "ConnectionString": "mongodb://root:Atl%402022@mongodb:27017/",
+    "Database": "token_service"
+  },
+  "OtherService": {
+    "TomsApi": {
+      "APP_ID": "TOMS",
+      "BaseUrl": "http://172.24.150.2:31001/"
+    },
+    "DASMiddlewareApiList": [
+      {
+        //TSCA // ik8s-master-virtual-ip
+        "BaseUrl": "https://172.24.151.109:32119/"
+      },
+      {
+        //LRT // ik8s-master-virtual-ip
+        "BaseUrl": "https://172.24.151.109:32114/"
+      },
+      {
+        //SMT // ik8s-master-virtual-ip
+        "BaseUrl": "https://172.24.151.109:32115/"
+      }
+    ]
+  },
+  "Kestrel": {
+    "EndpointDefaults": {
+      "ClientCertificateMode": "AllowCertificate"
+    }
+  }
+}
