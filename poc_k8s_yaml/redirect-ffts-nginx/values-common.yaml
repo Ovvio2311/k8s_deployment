@@ -1,0 +1,19 @@
+image:
+  registry: "192.168.64.186"
+
+config:
+  Kestrel__EndpointDefaults__ClientCertificateMode: "AllowCertificate"
+  dotnetEnv: "K8S_PROD"
+  EnableEd25519AuthenticationPlugin: "true"
+  Serilog__MinimumLevel__Default: "Debug"
+  Serilog__MinimumLevel__Override__Default: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__WriteTo__0__Name: "Logger"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Name: "Elasticsearch"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__autoRegisterTemplate: "True"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__emitEventFailure: "WriteToSelfLog"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__connectionTimeout: "2"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__indexFormat: "redirect-ffts-nginx{0:yyyy.MM.dd}"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__nodeUris: "http://192.168.8.47:9200;http://192.168.8.48:9200;http://192.168.8.49:9200;http://192.168.8.50:9200"
+  Serilog__WriteTo__0__Args__configureLogger__WriteTo__0__Args__connectionGlobalHeaders: "Authorization=Basic ZWxhc3RpYzpBdGxAMjAyMg=="
+

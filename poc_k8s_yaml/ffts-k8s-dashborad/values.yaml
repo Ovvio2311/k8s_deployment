@@ -1,0 +1,91 @@
+nameOverride: ffts-k8s-dashborad
+fullnameOverride: ffts-k8s-dashborad
+
+image:
+  repository: 192.168.64.186/demo_public/ffts-k8s-dashborad
+  tag: master
+  pullPolicy: Always
+imagePullSecrets: []
+
+http:
+  enabled: true
+  port: 80
+https:
+  enabled: false
+
+service:
+  enabled: true
+  type: NodePort
+  httpNodePort: 30000
+  # httpsNodePort: <server_node_port | 30000-32767>
+
+# caChainSecretName: ca-chain-secret
+# serverCertSecretName: ffts-k8s-dashborad-server-tls
+# clientCertSecretName: ffts-k8s-dashborad-client-tls
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+      "Serilog": {
+        "MinimumLevel": {
+          "Default": "Debug",
+          "Override": {
+            "Default": "Debug",
+            "Microsoft": "Warning",
+            "Microsoft.Hosting.Lifetime": "Information",
+            "System.Net.Http.HttpClient": "Warning"
+          }
+        },
+      },
+      "ClientCertConfig": {
+        "Path": "/app/client-cert-volume/tls.crt",
+        "KeyPath": "/app/client-cert-volume/tls.key"
+      }
+    }
+
+ingress:
+  enabled: false
+
+replicaCount: 1
+
+containerTimeZone: Asia/Hong_Kong
+
+clusterRole:
+  enabled: true
+  rules:   
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["get", "watch", "list"]
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

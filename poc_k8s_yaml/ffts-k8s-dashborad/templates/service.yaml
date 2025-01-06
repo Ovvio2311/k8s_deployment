@@ -1,0 +1,43 @@
+{{- if (.Values.service).enabled }}
+{{- $http := .Values.http -}}
+{{- $https := .Values.https -}}
+{{- $service := .Values.service -}}
+{{- $kongingress := .Values.kongingress -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "autotoll-dotnet.fullname" . }}
+  labels:
+    app: {{ template "autotoll-dotnet.name" . }}
+    chart: {{ template "autotoll-dotnet.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+{{- if $kongingress.enabled }}
+    konghq.com/override: {{ template "autotoll-dotnet.fullname" . }}-kongingress
+{{- end }}
+{{- with $service.annotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  type: {{ $service.type | default "ClusterIP" }}
+  ports:
+    {{- if $http.enabled }}
+    - name: http
+      targetPort: http
+      protocol: TCP
+      port: {{ $http.port }}
+      nodePort: {{ $service.httpNodePort }}
+    {{- end }}
+    {{- if $https.enabled }}
+    - name: https
+      targetPort: https
+      protocol: TCP
+      port: {{ $https.port }}
+      nodePort: {{ $service.httpsNodePort }}
+    {{- end }}
+  selector:
+    app: {{ template "autotoll-dotnet.name" . }}
+    release: {{ .Release.Name }}
+
+{{- end }}

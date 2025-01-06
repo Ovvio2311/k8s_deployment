@@ -1,0 +1,76 @@
+nameOverride: toms-api
+fullnameOverride: toms-api
+
+image:
+  repository: 192.168.64.186/bes/toms-api
+  tag: latest
+  pullPolicy: Always
+imagePullSecrets: []
+
+http:
+  enabled: true
+  port: 80
+https:
+  enabled: true
+  port: 443
+
+service:
+  enabled: true
+  type: NodePort
+  httpNodePort: 31001
+  httpsNodePort: 32001
+
+caChainSecretName: ca-chain-secret
+serverCertSecretName: toms-server-tls
+# clientCertSecretName: toms-client-tls
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+      "redis": {
+        "connectionString": "192.168.64.109:6379, password=uBg+4CD3Q08nQaXSpvdsq2gWH+LDXtreyQxe9hBO3hcUjcawTvmgt5AgWoAXnZQXdwz6FAyAcdwiy7MA"
+      },
+      "Kestrel": {
+        "Certificates": {
+          "Default": {
+            "Path": "/app/server-cert-volume/tls.crt",
+            "KeyPath": "/app/server-cert-volume/tls.key"
+          }
+        }
+      },
+      "ClientCertConfig": {
+        "Path": "/app/client-cert-volume/tls.crt",
+        "KeyPath": "/app/client-cert-volume/tls.key"
+      },
+      "CertAuthCacheEnabled": false
+    }
+
+ingress:
+  enabled: false
+
+replicaCount: 3
+
+containerTimeZone: Asia/Hong_Kong
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

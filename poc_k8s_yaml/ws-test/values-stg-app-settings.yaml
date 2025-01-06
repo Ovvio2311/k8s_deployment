@@ -1,0 +1,32 @@
+config:
+  dotnetEnv: "K8S_STG"
+  S3Config__DEV__Enabled: false
+  S3Config__STG__Enabled: true
+  S3Config__S1__Enabled: false
+  S3Config__S2__Enabled: false
+  appsettings: |
+    {
+      "MySQL": {
+        "ConnectionString": "server=10.14.0.91;Database=bes_core;uid=admin;pwd=admin;Pooling=true;MaximumPoolsize=1000;MinimumPoolSize=2;CharSet=utf8;default command timeout=600;Allow User Variables=True;SslMode=none;"
+      },
+      "JasperReportConfig": {
+        "URL": "http://10.14.0.88:8080/jasperserver/rest_v2/reportExecutions/",
+        "Authorization": "Basic YmVzdXNlcjpBdXRvdG9sbC4xMjM0"
+      },
+      "SendNotification": {
+        "PulsarUri": "pulsar://10.14.0.50:30222"
+      },
+      "StorageType": "S3",
+      "S3Config": {
+        "S1": {
+          "EndPoint": "https://tdffsbe-s1.t1cosg-obj001.gcisdctr.hksarg",
+          "AccessKeyID": "YmVzLXMxLWFwaTE=",
+          "AccessSecret": "c00d73aff09ff61b47b09003e1347a2b"
+        },
+        "S2": {
+          "EndPoint": "https://tdffsbe-s2.t1cosg-obj001.gcisdctr.hksarg",
+          "AccessKeyID": "dGRmZnNiZS1zMl9hZG1pbg==",
+          "AccessSecret": "448a99048d4d9b1d81b6765f01451ed3"
+        }
+      }
+    }

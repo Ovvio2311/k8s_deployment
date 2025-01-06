@@ -1,0 +1,103 @@
+{{- $fullName := include "autotoll-cronjob.fullname" . -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ $fullName }}
+    chart: {{ $fullName }}
+    release: {{ .Release.Name }}
+spec:
+  schedule: "{{ .Values.cronSpec.schedule }}"
+  {{- range $k, $v := .Values.cronSpec }}
+  {{- if and ( ne $k "schedule") }}
+  {{ $k }}: {{ $v }}
+  {{- end }}  
+  {{- end }}  
+  jobTemplate:
+    spec:
+      {{- range $k, $v := .Values.jobSpec }}
+      {{ $k }}: {{ $v }}
+      {{- end }}
+      template:
+        spec:
+          restartPolicy: "OnFailure" ## Always | OnFailure | Never     
+          volumes:
+          {{- if .Values.config.appsettings }}
+          - name: dotnet-config-volume
+            configMap: 
+              name: {{ $fullName }}-dotnet-config-cm
+          {{- end }}
+          {{- if .Values.caChainSecretName }}
+          - name: ca-chain-secret-volume
+            secret: 
+              secretName: {{ .Values.caChainSecretName }}
+          {{- end }}
+          containers:
+          - name: {{ .Chart.Name }}
+
+            {{- if .Values.image.registry }}
+            image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            {{- else }}
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            {{- end }}
+            
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            envFrom: 
+              - configMapRef:
+                  name: {{ $fullName }}-dotnet-config-cm
+            env:
+              - name: DOTNET_ENVIRONMENT
+                valueFrom: 
+                  configMapKeyRef:
+                    name: {{ $fullName }}-dotnet-config-cm
+                    key: dotnetEnv
+              {{- if .Values.containerTimeZone }}
+              - name: TZ
+                value: {{ .Values.containerTimeZone }}
+              {{- end }}
+              {{- $root := . }}
+              {{- range $ref, $values := .Values.secrets }}
+              {{- range $key, $value := $values }}
+              - name: {{ $ref }}_{{ $key }}
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $fullName }}-{{ $ref | lower }}
+                    key: {{ $key }}
+              {{- end }}
+              {{- end }}
+            {{- if .Values.config.appsettings }}
+            volumeMounts:
+            - name: dotnet-config-volume
+              mountPath: "/app/appsettings.{{ .Values.config.dotnetEnv }}.json"
+              subPath: "appsettings.{{ .Values.config.dotnetEnv }}.json"
+              readOnly: true
+            {{- end }}            
+            {{- if .Values.caChainSecretName }}
+            - name: ca-chain-secret-volume
+              mountPath: "/etc/ssl/certs/ca.crt"
+              subPath: "ca.crt"
+              readOnly: true
+            {{- end }}
+{{- if .Values.resources -}}
+            resources:
+{{ toYaml .Values.resources | indent 14 }}
+{{- end -}}
+
+{{- with .Values.imagePullSecrets }}
+        imagePullSecrets:
+{{ toYaml . | indent 10 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+        nodeSelector:
+{{ toYaml . | indent 10 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+        affinity:
+{{ toYaml . | indent 10 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+        tolerations:
+{{ toYaml . | indent 10 }}
+    {{- end }}
+

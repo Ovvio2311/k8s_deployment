@@ -1,0 +1,65 @@
+nameOverride: redirect-ffts-nginx
+fullnameOverride: redirect-ffts-nginx
+image:
+  registry: "192.168.64.186"
+  repository: library/nginx
+  tag: latest
+  pullPolicy: Always  
+
+imagePullSecrets: []
+
+http:
+  enabled: true
+  port: 80
+#https:
+  #enabled: false
+  #port: 443
+
+service:
+  enabled: true
+  type: NodePort
+  # node port 30000-32767
+  # httpNodePort: 30458
+  #httpsNodePort: <https-node-port>
+
+#caChainSecretName: ca-chain-secret
+# serverCertSecretName: <app-name>-server-tls
+# clientCertSecretName: <app-name>-client-tls
+
+config:
+  Kestrel__EndpointDefaults__ClientCertificateMode: "AllowCertificate"
+  dotnetEnv: "K8S_TSPDEV"   
+  appsettings: |
+   server {
+
+    }
+
+
+ingress:
+  enabled: false
+
+replicaCount: 1
+
+containerTimeZone: Asia/Hong_Kong
+
+probes:
+  enabled: false
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

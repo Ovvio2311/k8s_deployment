@@ -1,0 +1,60 @@
+{{- if .Values.ingress }}
+{{- if .Values.ingress.enabled }}
+{{- $fullName := include "autotoll-dotnet.fullname" . -}}
+{{- $kongingress := .Values.kongingress -}}
+{{- $servicePort := .Values.ingress.servicePort -}}
+{{- $servicePortName := .Values.ingress.servicePortName -}}
+{{- $ingressPath := .Values.ingress.path -}}
+{{- $ingressPathType := .Values.ingress.pathType -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ template "autotoll-dotnet.name" . }}
+    chart: {{ template "autotoll-dotnet.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:  
+{{- if $kongingress.enabled }}
+    konghq.com/override: {{ $fullName }}-kongingress
+{{- end }}
+{{- with .Values.ingress.annotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.ingress.tls }}
+  tls:
+  {{- range .Values.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+{{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+{{- end }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+    - host: {{ . }}
+      http:
+        paths:
+          - path: {{ $ingressPath }}
+            pathType: {{ $ingressPathType | default "ImplementationSpecific" }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  {{- if $servicePortName }}
+                  name: {{ $servicePortName }}
+                  {{- end }}
+                  {{- if $servicePort }}
+                  number: {{ $servicePort }}
+                  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+

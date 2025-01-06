@@ -1,0 +1,38 @@
+service:
+  enabled: true
+  type: NodePort
+  # node port 30000-32767
+  # httpNodePort: 31500
+  httpsNodePort: 32500
+
+http:
+  enabled: false
+  port: 80
+
+https:
+  enabled: true
+  port: 443
+
+serverCertSecretName: hketoll-gov-hk-tls
+
+replicaCount: 1
+config:
+  dotnetEnv: "K8S_PROD"
+  appsettings: |
+    server {
+      listen 443 ssl;
+      ssl_certificate     /app/server-cert-volume/tls.crt;
+      ssl_certificate_key /app/server-cert-volume/tls.key;
+      ssl on;
+
+      error_page 497 =302 https://www.ffts.hk/tc/;
+      
+      location / {
+        return 302 https://www.ffts.hk/tc/;
+      }
+
+      location /waf {
+        add_header Content-Type text/plain;
+        return 200 'OK';
+      }
+    }

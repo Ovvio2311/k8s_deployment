@@ -1,0 +1,54 @@
+# Default values for autotoll-cronjob.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+nameOverride: ws-test
+fullnameOverride: ws-test
+image:
+  registry: "192.168.64.186"
+  repository: poc/ws-test
+  tag: latest
+  pullPolicy: Always
+imagePullSecrets: []
+
+cronSpec:
+  schedule: "1 * * * *"
+  concurrencyPolicy: "Replace" ## Allow | Forbid | Replace
+  #startingDeadlineSeconds: 3600
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+
+jobSpec:
+  backoffLimit: 1
+  # ttlSecondsAfterFinished: 7200
+  activeDeadlineSeconds: 3600
+
+caChainSecretName: ca-chain-secret
+
+config:
+  dotnetEnv: "K8S_DEV"
+  appsettings: |
+    {
+    }
+
+containerTimeZone: Asia/Hong_Kong
+
+secrets: {}
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

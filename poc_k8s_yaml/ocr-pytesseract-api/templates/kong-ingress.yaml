@@ -1,0 +1,20 @@
+{{- if (.Values.kongingress).enabled -}}
+
+apiVersion: configuration.konghq.com/v1
+kind: KongIngress
+metadata:
+  name: {{ template "autotoll-dotnet.fullname" . }}-kongingress
+{{- with .Values.kongingress.proxy }}
+proxy:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with .Values.kongingress.route }}
+route:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with .Values.kongingress.upstream }}
+upstream:
+{{ toYaml . | indent 2 }}
+{{- end }}
+
+{{- end }}
