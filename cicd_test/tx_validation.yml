@@ -1,0 +1,19 @@
+stages:
+  - build
+  - deploy
+  - pre
+  - test
+
+test-build:
+  image: python:3.9
+  stage: test
+  before_script:
+    - pip3 install pip --upgrade
+    - pip3 install pytest==6.2.5
+    - pip3 install tavern==1.16.2
+    - pip3 install requests
+    - pip3 install pytest-pythonpath==0.7.3
+    - pip3 install allure-pytest==2.9.44
+  script:
+    - tavern-ci test_webapi.tavern.yaml -v
+    - tavern-ci test_webapi2.tavern.yaml -v

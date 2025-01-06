@@ -1,0 +1,39 @@
+test_name: Check 002
+
+strict:
+  - headers:on
+  - json:off
+stages:
+  - name: CreateAppMaster
+    request:
+      url: http://192.168.64.170:31009/Internal/Request/TEM_002_API_PULSAR
+      json:
+        req_time: "2023-08-11T02:51:46.150Z"
+        message: "test"
+      method: POST
+      headers:
+        content-type: application/json
+    response:
+      status_code: 201
+      json:
+        isSuccess: true
+        returnCode: null
+        returnResult: "Success"
+
+# tavern-ci test_webapi.tavern.yaml -v
+
+#tavern-ci test_server.tavern.yaml -v
+#tavern-ci --duration=0 test_api.tavern.yaml -v
+#k
+#pytest --durations=0 test_api.tavern.yaml -v
+#pytest test_server.tavern.yaml
+#pytest test_api.tavern.yaml
+
+#tavern-ci test_try.tavern.yaml -v
+#pytest test_try.tavern.yaml --alluredir=C:/Users/kennethcheung/PycharmProjects/pythonProject/socket/report
+#python -m allure serve C:/Users/kennethcheung/PycharmProjects/pythonProject/socket/report
+
+#install allure-pytest-2.9.44
+#pytest test_try.tavern.yaml -s -q --alluredir report
+#python -m allure serve report
+#python -m allure open report
