@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: new-app-name
+  namespace: argocd
+spec:
+  destination:
+    namespace: fyp
+    server: https://kubernetes.default.svc
+  source:
+    chart: "chart/new-app-name"
+    repoURL: local.harbor.io
+    targetRevision: 0.1.*
+    helm:
+      valueFiles:
+        - values.yaml
+  project: "default"
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+
+
+
