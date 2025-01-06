@@ -1,0 +1,29 @@
+{{- $http := .Values.http -}}
+{{- $https := .Values.https -}}
+{{- $service := .Values.service -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "k8s-app.fullname" . }}
+  labels:
+    {{- include "k8s-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+    {{- if $http.enabled }}
+    - name: http
+      targetPort: http
+      protocol: TCP
+      port: {{ $http.port }}
+      nodePort: {{ $service.httpNodePort }}
+    {{- end }}
+    {{- if $https.enabled }}
+    - name: https
+      targetPort: https
+      protocol: TCP
+      port: {{ $https.port }}
+      nodePort: {{ $service.httpsNodePort }}
+    {{- end }}
+  selector:
+    {{- include "k8s-app.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,166 @@
+{{- $fullName := include "k8s-app.fullname" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "k8s-app.fullname" . }}
+  labels:
+    {{- include "k8s-app.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "k8s-app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "k8s-app.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.clusterRole).enabled }}
+      serviceAccountName: {{ include "k8s-app.serviceAccountName" . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if .Values.image.registry }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- end }}          
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            {{- if (.Values.http).enabled }}
+            - name: http
+              containerPort: {{ .Values.http.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if (.Values.https).enabled }}
+            - name: https
+              containerPort: {{ .Values.https.port }}
+              protocol: TCP
+            {{- end }}
+          {{- if .Values.probe.enabled }} 
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }} 
+          envFrom:
+            - configMapRef:
+                name: {{ include "k8s-app.fullname" . }}-config-cm
+          env:                        
+            - name: K8S_URLS
+              value: "{{- if (.Values.http).enabled -}}http://+:{{ .Values.http.port }};{{- end -}}{{- if (.Values.https).enabled -}}https://+:{{ .Values.https.port }};{{- end -}}"
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom: 
+                configMapKeyRef:
+                  name: {{ include "k8s-app.fullname" . }}-config-cm
+                  key: dotnetEnv
+            - name: DOTNET_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "k8s-app.fullname" . }}-config-cm
+                  key: dotnetEnv
+            {{- if .Values.containerTimeZone }}
+            - name: TZ
+              value: {{ .Values.containerTimeZone }}
+            {{- end }}
+            {{- $root := . }}
+            {{- range $ref, $values := .Values.secrets }}
+            {{- range $key, $value := $values }}
+            - name: {{ $ref }}_{{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-{{ $ref | lower }}
+                  key: {{ $key }}
+            {{- end }}
+            {{- end }}
+            {{- if and (.Values.serverCertSecretName) ((.Values.https).enabled) }}
+            - name: Kestrel__Certificates__Default__Path
+              value: "/app/server-cert-volume/tls.crt"
+            - name: Kestrel__Certificates__Default__KeyPath
+              value: "/app/server-cert-volume/tls.key"
+            - name: Kestrel__Certificates__Default__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serverCertSecretName }}
+                  key: password
+                  optional: true
+            {{- end }}
+            {{- if .Values.clientCertSecretName }}
+            - name: ClientCertConfig__Path
+              value: "/app/client-cert-volume/tls.crt"
+            - name: ClientCertConfig__KeyPath
+              value: "/app/client-cert-volume/tls.key"
+            - name: ClientCertConfig__PasswordPath
+              value: "/app/client-cert-volume/password.txt"
+            {{- end }}           
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}          
+          volumeMounts:
+          - name: k8s-app-config-volume
+            mountPath: "/app/appsettings.{{ .Values.config.dotnetEnv }}.json"
+            subPath: "appsettings.{{ .Values.config.dotnetEnv }}.json"
+            readOnly: true
+          {{- if .Values.caChainSecretName }}
+          - name: ca-chain-secret-volume
+            mountPath: "/etc/ssl/certs/ca.crt"
+            subPath: "ca.crt"
+            readOnly: true
+          {{- end }}
+          {{- if and (.Values.serverCertSecretName) ((.Values.https).enabled) }}
+          - name: server-cert-secret-volume
+            mountPath: "/app/server-cert-volume/"
+            readOnly: true
+          {{- end }}
+          {{- if .Values.clientCertSecretName }}
+          - name: client-cert-secret-volume
+            mountPath: "/app/client-cert-volume/"
+            readOnly: true
+          {{- end }}
+      volumes:      
+      - name: k8s-app-config-volume
+        configMap: 
+          name: {{ include "k8s-app.fullname" . }}-config-cm
+      {{- if .Values.caChainSecretName }}
+      - name: ca-chain-secret-volume
+        secret: 
+          secretName: {{ .Values.caChainSecretName }}
+      {{- end }}
+      {{- if and (.Values.serverCertSecretName) ((.Values.https).enabled) }}
+      - name: server-cert-secret-volume
+        secret: 
+          secretName: {{ .Values.serverCertSecretName }}
+      {{- end }}
+      {{- if .Values.clientCertSecretName }}
+      - name: client-cert-secret-volume
+        secret: 
+          secretName: {{ .Values.clientCertSecretName }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
