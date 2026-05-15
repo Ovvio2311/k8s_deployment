@@ -15,7 +15,7 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://35.224.18.139:30443/root/k8s_deployment.git
+git remote add origin https://github.com/Ovvio2311/k8s_deployment.git
 git branch -M main
 git push -uf origin main
 ```
