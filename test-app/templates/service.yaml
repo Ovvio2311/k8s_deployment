@@ -1,0 +1,28 @@
+{{- $http := .Values.http -}}
+{{- $https := .Values.https -}}
+{{- $service := .Values.service -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "test-app.fullname" . }}
+  labels:
+    {{- include "test-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+      {{- if $http.enabled }}
+    - port: {{ $http.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      # nodePort: {{ $service.httpNodePort }}
+      {{- end }}
+      {{- if $https.enabled }}
+    - name: https
+      targetPort: https
+      protocol: TCP
+      port: {{ $https.port }}
+      # nodePort: {{ $service.httpsNodePort }}
+      {{- end }}
+  selector:
+    {{- include "test-app.selectorLabels" . | nindent 4 }}

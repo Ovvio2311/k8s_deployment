@@ -1,0 +1,25 @@
+{{- if .Values.config }}
+
+{{- $Env := .Values.config.Env -}}
+{{- $appsettings := .Values.config.appsettings -}}
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "test-app.fullname" . }}-config-cm
+data: 
+{{- if $Env }}
+  Env: "{{ $Env }}"
+{{- if $appsettings }}
+  appsettings.{{ $dotnetEnv }}.json: |
+{{ $appsettings | indent 4 }}
+{{- end }}
+{{- end }}
+
+{{- range $key, $value := .Values.config }}
+{{- if and (ne $key "appsettings") (ne $key "Env") }}
+  {{ $key }}: "{{ $value }}"
+{{- end }}
+{{- end }}
+{{- end }}
+
